@@ -1,6 +1,5 @@
 #include <pebble.h>
 
-struct CompassLayer;
 typedef struct CompassLayer CompassLayer;
 
 Layer *compass_layer_get_layer(CompassLayer* compassLayer);

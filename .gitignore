@@ -1,0 +1,6 @@
+
+# Ignore build generated files
+build
+.idea
+compass.xcodeproj/xcuserdata
+.lock-waf_darwin_build

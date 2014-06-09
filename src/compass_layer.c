@@ -4,8 +4,11 @@
 
 typedef struct {
     GPathInfo points;
-    int32_t angle;
+    int32_t target_angle;
+    int32_t angular_velocity;
     int32_t presentation_angle;
+    float friction;
+    float attraction;
     AppTimer *timer;
 } CompassLayerData;
 
@@ -61,24 +64,34 @@ void compass_layer_update_state(CompassLayer* layer);
 
 void compass_layer_data_schedule_update(CompassLayer *layer) {
     CompassLayerData *data = compass_layer_get_compass_data(layer);
-    data->timer = app_timer_register(1000 / 30, (AppTimerCallback)compass_layer_update_state, layer);
+    if(!data->timer) {
+        data->timer = app_timer_register(1000 / 30, (AppTimerCallback) compass_layer_update_state, layer);
+    }
 }
 
 void compass_layer_update_state(CompassLayer* layer) {
     CompassLayerData *data = compass_layer_get_compass_data(layer);
-    data->presentation_angle = (int32_t)(((int64_t)data->presentation_angle + (int64_t)data->angle) / 2);
+    data->presentation_angle = data->presentation_angle + data->angular_velocity;
+    int32_t attraction = (int32_t)((data->target_angle - data->presentation_angle) * data->attraction);
+    data->angular_velocity += attraction;
+    data->angular_velocity = (int32_t) (data->angular_velocity * data->friction);
+
     layer_mark_dirty(compass_layer_get_layer(layer));
 
-    if(data->presentation_angle != data->angle) {
+    data->timer = NULL;
+    if((int32_t)(attraction*data->friction) != 0 || data->angular_velocity != 0) {
         compass_layer_data_schedule_update(layer);
     } else {
-        data->timer = NULL;
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "CompassLayer rested");
     }
 }
 
 CompassLayer *compass_layer_create(GRect frame) {
     Layer *result = layer_create_with_data(frame, sizeof(CompassLayerData));
     memset(layer_get_data(result), 0, sizeof(CompassLayerData)); // is this really needed?
+    layer_get_compass_data(result)->friction = 0.9;
+    layer_get_compass_data(result)->attraction = 0.1;
+
     layer_set_update_proc(result, compass_layer_update_proc);
     return (CompassLayer *) result;
 }
@@ -89,14 +102,27 @@ void compass_layer_destroy(CompassLayer *layer) {
 
 void compass_layer_set_angle(CompassLayer *layer, int32_t angle) {
     CompassLayerData *data = compass_layer_get_compass_data(layer);
-    data->angle = angle;
-    if(!data->timer) {
-        compass_layer_data_schedule_update(layer);
-
-    }
+    data->target_angle = angle;
+    compass_layer_data_schedule_update(layer);
     // compass_layer_update_state will eventually call layer_mark_dirty
 }
 
 int32_t compass_layer_get_angle(CompassLayer *layer) {
-    return compass_layer_get_compass_data(layer)->angle;
+    return compass_layer_get_compass_data(layer)->target_angle;
+}
+
+void compass_layer_set_friction(CompassLayer *layer, float friction) {
+    compass_layer_get_compass_data(layer)->friction = friction;
+}
+
+float compass_layer_get_friction(CompassLayer *layer) {
+    return compass_layer_get_compass_data(layer)->friction;
+}
+
+void compass_layer_set_attraction(CompassLayer *layer, float attraction) {
+    compass_layer_get_compass_data(layer)->friction = attraction;
+}
+
+float compass_layer_get_attraction(CompassLayer *layer) {
+    return compass_layer_get_compass_data(layer)->attraction;
 }

@@ -27,7 +27,7 @@ static void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
 
-    compass_layer = compass_layer_create((GRect){.size={bounds.size.w, (int16_t)(bounds.size.h-20)}});
+    compass_layer = compass_layer_create((GRect){.size={bounds.size.w, (int16_t)(bounds.size.h-30)}});
     layer_add_child(window_layer, compass_layer_get_layer(compass_layer));
 
     text_layer = text_layer_create((GRect) { .origin = { 0, (int16_t)(bounds.size.h-20)}, .size = { bounds.size.w, 20 } });

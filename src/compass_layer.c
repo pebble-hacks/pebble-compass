@@ -52,6 +52,8 @@ void compass_layer_update_proc(struct Layer *layer, GContext *ctx) {
     gpath_draw_filled(ctx, path);
 
     gpath_rotate_to(path, angle + TRIG_MAX_ANGLE/2);
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    gpath_draw_filled(ctx, path);
     gpath_draw_outline(ctx, path);
 
     gpath_destroy(path);

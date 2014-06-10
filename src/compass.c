@@ -1,9 +1,11 @@
 #include <pebble.h>
 #include "compass_layer.h"
+#include "ticks_layer.h"
 
 static Window *window;
 static TextLayer *text_layer;
 static CompassLayer *compass_layer;
+static TicksLayer *ticks_layer;
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     compass_layer_set_angle(compass_layer, 0);
@@ -27,7 +29,12 @@ static void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
 
-    compass_layer = compass_layer_create((GRect){.size={bounds.size.w, (int16_t)(bounds.size.h-30)}});
+    GRect roseRect = ((GRect){.size={bounds.size.w, (int16_t)(bounds.size.h-30)}});
+
+    ticks_layer = ticks_layer_create(roseRect);
+    layer_add_child(window_layer, ticks_layer_get_layer(ticks_layer));
+
+    compass_layer = compass_layer_create(roseRect);
     layer_add_child(window_layer, compass_layer_get_layer(compass_layer));
 
     text_layer = text_layer_create((GRect) { .origin = { 0, (int16_t)(bounds.size.h-20)}, .size = { bounds.size.w, 20 } });
@@ -43,6 +50,7 @@ static void window_unload(Window *window) {
 
 static void init(void) {
     window = window_create();
+//    window_set_background_color(window, GColorBlack);
     window_set_click_config_provider(window, click_config_provider);
     window_set_window_handlers(window, (WindowHandlers) {
             .load = window_load,

@@ -31,8 +31,6 @@ void compass_layer_update_proc(struct Layer *layer, GContext *ctx) {
     const GPoint center = grect_center_point(&r);
     const uint16_t radius = (uint16_t) (MIN(r.size.w, r.size.h) / 2);
     graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_fill_circle(ctx, center, radius);
-    graphics_draw_circle(ctx, center, radius);
 
     const int16_t needle_width = (int16_t) (radius/4);
     const int16_t needle_length = radius;
@@ -52,7 +50,6 @@ void compass_layer_update_proc(struct Layer *layer, GContext *ctx) {
     gpath_move_to(path, center);
     graphics_context_set_fill_color(ctx, GColorBlack);
     gpath_draw_filled(ctx, path);
-    gpath_draw_outline(ctx, path);
 
     gpath_rotate_to(path, angle + TRIG_MAX_ANGLE/2);
     gpath_draw_outline(ctx, path);

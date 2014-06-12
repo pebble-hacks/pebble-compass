@@ -32,16 +32,23 @@ static GPoint point_from_center(TicksLayer* layer, int32_t angle, int32_t radius
     };
 }
 
+int32_t tick_len(TicksLayer *layer, int tick_idx) {
+    if(tick_idx == 0) return 0;
+    switch(tick_idx % 4) {
+        case 0: return 10;
+        case 2: return 5;
+        default: return 2;
+    }
+}
 
 void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
+    TicksLayer *ticks_layer = (TicksLayer *)layer;
     const GRect bounds = layer_get_bounds(layer);
     const GPoint center = grect_center_point(&bounds);
 
     const int32_t r2 = (MIN(bounds.size.w, bounds.size.h) / 2);
 
     // TODO: put GPaths into structure to avoid repetitive malloc
-
-//    const int32_t r1 = 0;
 
     // draw ticks
     {
@@ -53,58 +60,15 @@ void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
         };
         GPath *path = gpath_create(&points);
 
-        int32_t base_angle = layer_get_ticks_data(layer)->angle;
-
         for (int i = 0; i < num_ticks; i++) {
-            if(i == 0){
-                // for now, skip north to avoid flicker with triangle below
-                continue;
-            }
-
-            int32_t angle = base_angle + (int32_t) (TRIG_MAX_ANGLE * i / num_ticks);
-            int32_t len;
-            int16_t d = 0;
-            switch (i % 4) {
-                case 0:
-                    len = 10;
-                    break;
-                case 2:
-                    len = 5;
-                    break;
-                default:
-                    len = 2;
-            }
-
+            int32_t angle = (int32_t) (TRIG_MAX_ANGLE * i / num_ticks);
+            int32_t len = tick_len(ticks_layer, i);
             const int32_t r1 = r2 - len;
 
-            const int32_t yy = -cos_lookup(angle);
-            const int32_t xx = sin_lookup(angle);
+            const GPoint inner = point_from_center(ticks_layer, angle, r1);
+            const GPoint outer = point_from_center(ticks_layer, angle, r2);
 
-            const GPoint inner = {
-                    (int16_t) (xx * r1 / TRIG_MAX_RATIO) + center.x,
-                    (int16_t) (yy * r1 / TRIG_MAX_RATIO) + center.y,
-            };
-            const GPoint outer = {
-                    (int16_t) (xx * r2 / TRIG_MAX_RATIO) + center.x,
-                    (int16_t) (yy * r2 / TRIG_MAX_RATIO) + center.y,
-            };
-
-            const int16_t oy = (int16_t) (-cos_lookup(angle + TRIG_MAX_ANGLE / 4) * d / TRIG_MAX_RATIO);
-            const int16_t ox = (int16_t) (+sin_lookup(angle + TRIG_MAX_ANGLE / 4) * d / TRIG_MAX_RATIO);
-            const int16_t py = (int16_t) (-cos_lookup(angle - TRIG_MAX_ANGLE / 4) * d / TRIG_MAX_RATIO);
-            const int16_t px = (int16_t) (+sin_lookup(angle - TRIG_MAX_ANGLE / 4) * d / TRIG_MAX_RATIO);
-
-            points.points[0].x = inner.x + ox;
-            points.points[0].y = inner.y + oy;
-            points.points[1].x = outer.x + ox;
-            points.points[1].y = outer.y + oy;
-            points.points[2].y = outer.y + py;
-            points.points[2].x = outer.x + px;
-            points.points[3].x = inner.x + px;
-            points.points[3].y = inner.y + py;
-
-            gpath_draw_filled(ctx, path);
-            gpath_draw_outline(ctx, path);
+            graphics_draw_line(ctx, inner, outer);
         }
 
         gpath_destroy(path);
@@ -118,9 +82,9 @@ void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
         GPathInfo points = {
                 3,
                 (GPoint[3]) {
-                    point_from_center((TicksLayer *)layer, 0, ledge+r2),
-                    point_from_center((TicksLayer *)layer, angle, ledge+r2-len),
-                    point_from_center((TicksLayer *)layer, -angle, ledge+r2-len),
+                    point_from_center(ticks_layer, 0, ledge+r2),
+                    point_from_center(ticks_layer, angle, ledge+r2-len),
+                    point_from_center(ticks_layer, -angle, ledge+r2-len),
                 },
         };
         GPath *path = gpath_create(&points);
@@ -161,7 +125,7 @@ void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
                 char const *caption = point_helpers[i].caption;
                 const GFont font = point_helpers[i].font;
 
-                const GPoint p = point_from_center((TicksLayer *) layer, point_helpers[i].angle, r0);
+                const GPoint p = point_from_center(ticks_layer, point_helpers[i].angle, r0);
 
                 GSize size = graphics_text_layout_get_content_size(caption, font, GRect(0, 0, 100, 100), GTextOverflowModeFill, GTextAlignmentCenter);
                 GRect text_box = (GRect) {{(int16_t) (p.x - size.w / 2), (int16_t) (p.y - size.h / 2 - vertical_text_offset)}, size};

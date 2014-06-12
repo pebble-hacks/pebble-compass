@@ -76,6 +76,10 @@ void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
 
     const int32_t r2 = (MIN(bounds.size.w, bounds.size.h) / 2);
 
+    graphics_context_set_stroke_color(ctx, GColorWhite);
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_context_set_text_color(ctx, GColorWhite);
+
     // TODO: put GPaths into structure to avoid repetitive malloc
 
     // draw ticks
@@ -157,7 +161,6 @@ void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
 
                 GSize size = graphics_text_layout_get_content_size(caption, font, GRect(0, 0, 100, 100), GTextOverflowModeFill, GTextAlignmentCenter);
                 GRect text_box = (GRect) {{(int16_t) (p.x - size.w / 2), (int16_t) (p.y - size.h / 2 - vertical_text_offset)}, size};
-                graphics_context_set_text_color(ctx, GColorBlack);
                 graphics_draw_text(ctx, caption, font, text_box, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
             }
         }

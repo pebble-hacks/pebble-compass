@@ -114,6 +114,8 @@ static void compass_window_load(Window *window) {
     data->direction_layer = text_layer_create(data->direction_layer_rect_rose);
     text_layer_set_text_alignment(data->direction_layer, GTextAlignmentCenter);
     text_layer_set_font(data->direction_layer, text_font);
+    text_layer_set_text_color(data->direction_layer, GColorWhite);
+    text_layer_set_background_color(data->direction_layer, GColorClear);
     layer_add_child(window_layer, text_layer_get_layer(data->direction_layer));
 
     const int16_t angle_layer_width_rose = 40;
@@ -124,6 +126,8 @@ static void compass_window_load(Window *window) {
     data->angle_layer = text_layer_create(data->angle_layer_rect_rose);
     text_layer_set_text_alignment(data->angle_layer, GTextAlignmentRight);
     text_layer_set_font(data->angle_layer, text_font);
+    text_layer_set_text_color(data->angle_layer, GColorWhite);
+    text_layer_set_background_color(data->angle_layer, GColorClear);
     layer_add_child(window_layer, text_layer_get_layer(data->angle_layer));
 
 
@@ -136,9 +140,6 @@ static void compass_window_load(Window *window) {
     roseRect.origin.y += 10;
     roseRect.size.h -= 20;
     roseRect.size.w -= 20;
-
-    InverterLayer *inverter_layer = inverter_layer_create(bounds);
-    layer_add_child(window_layer, inverter_layer_get_layer(inverter_layer));
 
     data->pointer_layer_rect_rose = (GRect){{71,0}, {3,20}};
     data->pointer_layer_rect_band = (GRect){{71,18}, {3,40}};
@@ -177,6 +178,7 @@ CompassWindow *compass_window_create() {
             .unload = compass_window_unload,
     });
     window_set_click_config_provider_with_context(window, click_config_provider, data);
+    window_set_background_color(window, GColorBlack);
 
     return (CompassWindow *) window;
 }

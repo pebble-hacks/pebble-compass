@@ -1,5 +1,5 @@
 #include <pebble.h>
-#include "compass_layer.h"
+#include "needle_layer.h"
 #include "ticks_layer.h"
 
 static Window *window;
@@ -10,33 +10,33 @@ static GRect angle_layer_rect_band;
 static TextLayer *direction_layer;
 static GRect direction_layer_rect_rose;
 static GRect direction_layer_rect_band;
-static CompassLayer *compass_layer;
+static NeedleLayer *needle_layer;
 
 static TicksLayer *ticks_layer;
 
-static InverterLayer *needle_layer;
-static GRect needle_layer_rect_rose;
-static GRect needle_layer_rect_band;
+static InverterLayer *pointer_layer;
+static GRect pointer_layer_rect_rose;
+static GRect pointer_layer_rect_band;
 
 
-static void compass_layer_update_callback(CompassLayer* layer);
+static void compass_layer_update_callback(NeedleLayer * layer);
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-//    compass_layer_set_angle(compass_layer, 0);
+//    needle_layer_set_angle(needle_layer, 0);
 //    ticks_layer_set_transition_factor(ticks_layer, ticks_layer_get_transition_factor(ticks_layer) - 0.1f);
-//    compass_layer_update_callback(compass_layer);
+//    compass_layer_update_callback(needle_layer);
 
     ticks_layer_set_shows_band(ticks_layer, !ticks_layer_get_shows_band(ticks_layer));
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-    //compass_layer_set_angle(compass_layer, compass_layer_get_angle(compass_layer) - TRIG_MAX_ANGLE / 10);
+    //needle_layer_set_angle(needle_layer, needle_layer_get_angle(needle_layer) - TRIG_MAX_ANGLE / 10);
     ticks_layer_set_transition_factor(ticks_layer, ticks_layer_get_transition_factor(ticks_layer) + 0.1f);
-    compass_layer_update_callback(compass_layer);
+    compass_layer_update_callback(needle_layer);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-    compass_layer_set_angle(compass_layer, compass_layer_get_angle(compass_layer) + TRIG_MAX_ANGLE / 5);
+    needle_layer_set_angle(needle_layer, needle_layer_get_angle(needle_layer) + TRIG_MAX_ANGLE / 5);
 }
 
 static void click_config_provider(void *context) {
@@ -58,8 +58,8 @@ GRect rect_blend(GRect *r1, GRect *r2, float f) {
     };
 }
 
-static void compass_layer_update_callback(CompassLayer* layer) {
-    int32_t angle = compass_layer_get_presentation_angle(layer);
+static void compass_layer_update_callback(NeedleLayer * layer) {
+    int32_t angle = needle_layer_get_presentation_angle(layer);
     ticks_layer_set_angle(ticks_layer, angle);
 
     const float blend_factor = ticks_layer_get_transition_factor(ticks_layer);
@@ -81,7 +81,7 @@ static void compass_layer_update_callback(CompassLayer* layer) {
     text_layer_set_text(direction_layer, direction_texts[direction_index]);
     layer_set_frame(text_layer_get_layer(direction_layer), rect_blend(&direction_layer_rect_rose, &direction_layer_rect_band, blend_factor));
 
-    layer_set_frame(inverter_layer_get_layer(needle_layer), rect_blend(&needle_layer_rect_rose, &needle_layer_rect_band, blend_factor));
+    layer_set_frame(inverter_layer_get_layer(pointer_layer), rect_blend(&pointer_layer_rect_rose, &pointer_layer_rect_band, blend_factor));
 }
 
 static void window_load(Window *window) {
@@ -121,25 +121,25 @@ static void window_load(Window *window) {
     roseRect.origin.y += 10;
     roseRect.size.h -= 20;
     roseRect.size.w -= 20;
-    compass_layer = compass_layer_create(roseRect);
-    compass_layer_set_update_callback(compass_layer, compass_layer_update_callback);
-    layer_set_hidden(compass_layer_get_layer(compass_layer), true);
-    layer_add_child(window_layer, compass_layer_get_layer(compass_layer));
+    needle_layer = needle_layer_create(roseRect);
+    needle_layer_set_update_callback(needle_layer, compass_layer_update_callback);
+    layer_set_hidden(needle_layer_get_layer(needle_layer), true);
+    layer_add_child(window_layer, needle_layer_get_layer(needle_layer));
 
     InverterLayer *inverter_layer = inverter_layer_create(bounds);
     layer_add_child(window_layer, inverter_layer_get_layer(inverter_layer));
 
-    needle_layer_rect_rose = (GRect){{71,0}, {3,20}};
-    needle_layer_rect_band = (GRect){{71,18}, {3,40}};
-    needle_layer = inverter_layer_create(needle_layer_rect_rose);
-    layer_add_child(window_layer, inverter_layer_get_layer(needle_layer));
+    pointer_layer_rect_rose = (GRect){{71,0}, {3,20}};
+    pointer_layer_rect_band = (GRect){{71,18}, {3,40}};
+    pointer_layer = inverter_layer_create(pointer_layer_rect_rose);
+    layer_add_child(window_layer, inverter_layer_get_layer(pointer_layer));
 
-    compass_layer_set_angle(compass_layer, 45* TRIG_MAX_ANGLE/360);
+    needle_layer_set_angle(needle_layer, 45 * TRIG_MAX_ANGLE / 360);
 }
 
 static void window_unload(Window *window) {
     text_layer_destroy(angle_layer);
-    compass_layer_destroy(compass_layer);
+    needle_layer_destroy(needle_layer);
 }
 
 static void init(void) {

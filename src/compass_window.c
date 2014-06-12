@@ -29,56 +29,22 @@ Window *compass_window_get_window(CompassWindow *window) {
 }
 
 static void compass_layer_update_layout(CompassWindowData *data);
-static void set_shows_band(CompassWindowData *data, bool shows_band);
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 //    needle_layer_set_angle(needle_layer, 0);
 //    ticks_layer_set_transition_factor(ticks_layer, ticks_layer_get_transition_factor(ticks_layer) - 0.1f);
 //    compass_layer_update_layout(needle_layer);
     CompassWindowData *data = context;
-    set_shows_band(data, !data->shows_band);
+
+    DataProviderOrientation o = data_provider_get_orientation(data->data_provider) == DataProviderOrientationFlat ? DataProviderOrientationUpright : DataProviderOrientationFlat;
+    data_provider_set_orientation(data->data_provider, o);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     //needle_layer_set_angle(needle_layer, needle_layer_get_angle(needle_layer) - TRIG_MAX_ANGLE / 10);
     CompassWindowData *data = context;
-    ticks_layer_set_transition_factor(data->ticks_layer, ticks_layer_get_transition_factor(data->ticks_layer) + 0.1f);
+    data_provider_set_orientation_transition_factor(data->data_provider, data_provider_get_orientation_transition_factor(data->data_provider) + 0.1f);
     compass_layer_update_layout(data);
-}
-
-static void set_transition_factor(CompassWindowData *data, float factor) {
-    ticks_layer_set_transition_factor(data->ticks_layer, factor);
-    compass_layer_update_layout(data);
-}
-
-static void compass_window_update_transition_factor(struct Animation *animation, const uint32_t time_normalized) {
-    CompassWindowData *data = animation->context;
-    float f = (float)time_normalized / ANIMATION_NORMALIZED_MAX;
-    float target = data->shows_band ? 1 : 0;
-
-    set_transition_factor(data, target * f + (1-f) * data->transition_animation_start_value);
-}
-
-static AnimationImplementation transition_animation = {
-    .update = compass_window_update_transition_factor,
-};
-
-static void set_shows_band(CompassWindowData *data, bool shows_band) {
-    if(data->shows_band == shows_band) return;
-
-    // TODO: refactor to make this a property animation
-    data->shows_band = shows_band;
-    if(!data->transition_animation) {
-        data->transition_animation = animation_create();
-        data->transition_animation->duration_ms = 200;
-        data->transition_animation->context = data;
-        data->transition_animation->implementation = &transition_animation;
-    } else {
-        animation_unschedule(data->transition_animation);
-    }
-
-    data->transition_animation_start_value = ticks_layer_get_transition_factor(data->ticks_layer);
-    animation_schedule(data->transition_animation);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -105,35 +71,31 @@ GRect rect_blend(GRect *r1, GRect *r2, float f) {
     };
 }
 
-// TODO: logic should be controlled by window, NOT an invisible layer...
-// also, get rid of this global here
-
-static CompassWindowData* single_compass_data;
-
 static void compass_layer_update_layout(CompassWindowData *data) {
     int32_t angle = data_provider_get_presentation_angle(data->data_provider);
-    ticks_layer_set_angle(single_compass_data->ticks_layer, angle);
+    ticks_layer_set_angle(data->ticks_layer, angle);
 
-    const float blend_factor = ticks_layer_get_transition_factor(single_compass_data->ticks_layer);
+    const float transition_factor = data_provider_get_orientation_transition_factor(data->data_provider);
+    ticks_layer_set_transition_factor(data->ticks_layer, transition_factor);
 
     static char angle_text[] = "123°";
     int32_t normalized_angle = ((int)(angle * 360 / TRIG_MAX_ANGLE) % 360 + 360) % 360;
     snprintf(angle_text, sizeof(angle_text), "%d°", (int)normalized_angle);
-    text_layer_set_text(single_compass_data->angle_layer, angle_text);
-    GRect r = rect_blend(&single_compass_data->angle_layer_rect_rose, &single_compass_data->angle_layer_rect_band, blend_factor);
-    layer_set_frame(text_layer_get_layer(single_compass_data->angle_layer), r);
+    text_layer_set_text(data->angle_layer, angle_text);
+    GRect r = rect_blend(&data->angle_layer_rect_rose, &data->angle_layer_rect_band, transition_factor);
+    layer_set_frame(text_layer_get_layer(data->angle_layer), r);
     // workound!
     // TODO: file a bug for tintin applib
-    layer_set_bounds(text_layer_get_layer(single_compass_data->angle_layer), (GRect){.size=r.size});
-    text_layer_set_text_alignment(single_compass_data->angle_layer, GTextAlignmentRight);
+    layer_set_bounds(text_layer_get_layer(data->angle_layer), (GRect){.size=r.size});
+    text_layer_set_text_alignment(data->angle_layer, GTextAlignmentRight);
 
     static char *direction_texts[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
     int32_t direction_index = ((normalized_angle + 23) / (360 / ARRAY_LENGTH(direction_texts))) % ARRAY_LENGTH(direction_texts);
 //    int32_t direction_index = 1;
-    text_layer_set_text(single_compass_data->direction_layer, direction_texts[direction_index]);
-    layer_set_frame(text_layer_get_layer(single_compass_data->direction_layer), rect_blend(&single_compass_data->direction_layer_rect_rose, &single_compass_data->direction_layer_rect_band, blend_factor));
+    text_layer_set_text(data->direction_layer, direction_texts[direction_index]);
+    layer_set_frame(text_layer_get_layer(data->direction_layer), rect_blend(&data->direction_layer_rect_rose, &data->direction_layer_rect_band, transition_factor));
 
-    layer_set_frame(inverter_layer_get_layer(single_compass_data->pointer_layer), rect_blend(&single_compass_data->pointer_layer_rect_rose, &single_compass_data->pointer_layer_rect_band, blend_factor));
+    layer_set_frame(inverter_layer_get_layer(data->pointer_layer), rect_blend(&data->pointer_layer_rect_rose, &data->pointer_layer_rect_band, transition_factor));
 }
 
 static void compass_window_load(Window *window) {
@@ -205,6 +167,7 @@ CompassWindow *compass_window_create() {
 
     data->data_provider = data_provider_create(data, (DataProviderHandlers) {
         .presented_angle_changed = handle_data_provider_update,
+        .orientation_transition_factor_changed = handle_data_provider_update,
     });
 
     window_set_user_data(window, data);
@@ -214,7 +177,6 @@ CompassWindow *compass_window_create() {
             .unload = compass_window_unload,
     });
     window_set_click_config_provider_with_context(window, click_config_provider, data);
-    single_compass_data = data;
 
     return (CompassWindow *) window;
 }

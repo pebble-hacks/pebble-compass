@@ -20,9 +20,11 @@
 		93A3D2DC913D461FAA0E5AFB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		AA59459DC60B4EACA5D53298 /* fake-iOS-target.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "fake-iOS-target.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF716E33F0AF4C57B338048F /* appinfo.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; path = appinfo.json; sourceTree = "<group>"; };
+		F26B0470BEA3ABB62E2EC668 /* data_provider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = data_provider.h; sourceTree = "<group>"; };
 		F26B0599C51B88BF97F5A645 /* needle_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = needle_layer.h; sourceTree = "<group>"; };
 		F26B074529A615354B00BCFF /* compass_window.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = compass_window.c; sourceTree = "<group>"; };
 		F26B097000ACCD1DD075E30C /* compass_window.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = compass_window.h; sourceTree = "<group>"; };
+		F26B0AC7E87FD83073330865 /* data_provider.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = data_provider.c; sourceTree = "<group>"; };
 		F26B0B08DCBA1DD8D5C10EE3 /* needle_layer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = needle_layer.c; sourceTree = "<group>"; };
 		F26B0C243DF5F196CF169AA8 /* ticks_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ticks_layer.h; sourceTree = "<group>"; };
 		F26B0CF75A40FD56A2CC9CAB /* ticks_layer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ticks_layer.c; sourceTree = "<group>"; };
@@ -50,6 +52,8 @@
 				F26B0CF75A40FD56A2CC9CAB /* ticks_layer.c */,
 				F26B097000ACCD1DD075E30C /* compass_window.h */,
 				F26B074529A615354B00BCFF /* compass_window.c */,
+				F26B0470BEA3ABB62E2EC668 /* data_provider.h */,
+				F26B0AC7E87FD83073330865 /* data_provider.c */,
 			);
 			name = sources;
 			path = src;

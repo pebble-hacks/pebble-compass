@@ -1,6 +1,14 @@
 #include "compass_window.h"
 #include "ticks_layer.h"
-#include "needle_layer.h"
+
+typedef struct {
+    int32_t target_angle;
+    int32_t angular_velocity;
+    int32_t presentation_angle;
+    float friction;
+    float attraction;
+    AppTimer *timer;
+} CompassWindowRotationState;
 
 typedef struct {
     GRect direction_layer_rect_rose;
@@ -12,37 +20,93 @@ typedef struct {
     TextLayer *angle_layer;
 
     TicksLayer *ticks_layer;
-    NeedleLayer *needle_layer;
 
     GRect pointer_layer_rect_rose;
     GRect pointer_layer_rect_band;
     InverterLayer *pointer_layer;
+
+    CompassWindowRotationState rotation_state;
+
+    bool shows_band;
+    Animation *transition_animation;
+    float transition_animation_start_value;
 } CompassWindowData;
 
 Window *compass_window_get_window(CompassWindow *window) {
     return (Window *)window;
 }
 
-static void compass_layer_update_callback(NeedleLayer * layer);
+static void compass_layer_update_layout(CompassWindowData *data);
+static void update_rotation_state(CompassWindowData *window_data);
+static void set_shows_band(CompassWindowData *data, bool shows_band);
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 //    needle_layer_set_angle(needle_layer, 0);
 //    ticks_layer_set_transition_factor(ticks_layer, ticks_layer_get_transition_factor(ticks_layer) - 0.1f);
-//    compass_layer_update_callback(needle_layer);
+//    compass_layer_update_layout(needle_layer);
     CompassWindowData *data = context;
-    ticks_layer_set_shows_band(data->ticks_layer, !ticks_layer_get_shows_band(data->ticks_layer));
+    set_shows_band(data, !data->shows_band);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     //needle_layer_set_angle(needle_layer, needle_layer_get_angle(needle_layer) - TRIG_MAX_ANGLE / 10);
     CompassWindowData *data = context;
     ticks_layer_set_transition_factor(data->ticks_layer, ticks_layer_get_transition_factor(data->ticks_layer) + 0.1f);
-    compass_layer_update_callback(data->needle_layer);
+    compass_layer_update_layout(data);
+}
+
+static void schedule_layout_update(CompassWindowData *data) {
+//    NeedleLayerData *data = needle_layer_get_needle_data(layer);
+
+    if(!data->rotation_state.timer) {
+        data->rotation_state.timer = app_timer_register(1000 / 30, (AppTimerCallback) update_rotation_state, data);
+    }
+}
+
+static void set_target_angle(CompassWindowData *data, int32_t angle) {
+    data->rotation_state.target_angle = angle;
+    schedule_layout_update(data);
+    // needle_layer_update_state will eventually call layer_mark_dirty
+}
+
+static void set_transition_factor(CompassWindowData *data, float factor) {
+    ticks_layer_set_transition_factor(data->ticks_layer, factor);
+    compass_layer_update_layout(data);
+}
+
+static void compass_window_update_transition_factor(struct Animation *animation, const uint32_t time_normalized) {
+    CompassWindowData *data = animation->context;
+    float f = (float)time_normalized / ANIMATION_NORMALIZED_MAX;
+    float target = data->shows_band ? 1 : 0;
+
+    set_transition_factor(data, target * f + (1-f) * data->transition_animation_start_value);
+}
+
+static AnimationImplementation transition_animation = {
+    .update = compass_window_update_transition_factor,
+};
+
+static void set_shows_band(CompassWindowData *data, bool shows_band) {
+    if(data->shows_band == shows_band) return;
+
+    // TODO: refactor to make this a property animation
+    data->shows_band = shows_band;
+    if(!data->transition_animation) {
+        data->transition_animation = animation_create();
+        data->transition_animation->duration_ms = 200;
+        data->transition_animation->context = data;
+        data->transition_animation->implementation = &transition_animation;
+    } else {
+        animation_unschedule(data->transition_animation);
+    }
+
+    data->transition_animation_start_value = ticks_layer_get_transition_factor(data->ticks_layer);
+    animation_schedule(data->transition_animation);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     CompassWindowData *data = context;
-    needle_layer_set_angle(data->needle_layer, needle_layer_get_angle(data->needle_layer) + TRIG_MAX_ANGLE / 5);
+    set_target_angle(data, data->rotation_state.target_angle + TRIG_MAX_ANGLE / 5);
 }
 
 static void click_config_provider(void *context) {
@@ -68,8 +132,11 @@ GRect rect_blend(GRect *r1, GRect *r2, float f) {
 // also, get rid of this global here
 
 static CompassWindowData* single_compass_data;
-static void compass_layer_update_callback(NeedleLayer * layer) {
-    int32_t angle = needle_layer_get_presentation_angle(layer);
+
+
+
+static void compass_layer_update_layout(CompassWindowData *data) {
+    int32_t angle = data->rotation_state.presentation_angle;
     ticks_layer_set_angle(single_compass_data->ticks_layer, angle);
 
     const float blend_factor = ticks_layer_get_transition_factor(single_compass_data->ticks_layer);
@@ -132,10 +199,6 @@ static void compass_window_load(Window *window) {
     roseRect.origin.y += 10;
     roseRect.size.h -= 20;
     roseRect.size.w -= 20;
-    data->needle_layer = needle_layer_create(roseRect);
-    needle_layer_set_update_callback(data->needle_layer, compass_layer_update_callback);
-    layer_set_hidden(needle_layer_get_layer(data->needle_layer), true);
-    layer_add_child(window_layer, needle_layer_get_layer(data->needle_layer));
 
     InverterLayer *inverter_layer = inverter_layer_create(bounds);
     layer_add_child(window_layer, inverter_layer_get_layer(inverter_layer));
@@ -145,17 +208,45 @@ static void compass_window_load(Window *window) {
     data->pointer_layer = inverter_layer_create(data->pointer_layer_rect_rose);
     layer_add_child(window_layer, inverter_layer_get_layer(data->pointer_layer));
 
-    needle_layer_set_angle(data->needle_layer, 45 * TRIG_MAX_ANGLE / 360);
-
+    set_target_angle(data, 45 * TRIG_MAX_ANGLE / 360);
 }
 
+static void update_rotation_state(CompassWindowData *window_data) {
+    CompassWindowRotationState *data = &window_data->rotation_state;
+    data->presentation_angle = data->presentation_angle + data->angular_velocity;
+    int32_t attraction = (int32_t)((data->target_angle - data->presentation_angle) * data->attraction);
+    data->angular_velocity += attraction;
+    data->angular_velocity = (int32_t) (data->angular_velocity * data->friction);
+
+    //layer_mark_dirty(needle_layer_get_layer(layer));
+    compass_layer_update_layout(window_data);
+
+    data->timer = NULL;
+    if((int32_t)(attraction*data->friction) != 0 || data->angular_velocity != 0) {
+        schedule_layout_update(window_data);
+    } else {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "NeedleLayer rested");
+    }
+}
+
+
 static void compass_window_unload(Window *window) {
-    // TODO: free memory
+    CompassWindowData *data = window_get_user_data(window);
+    ticks_layer_destroy(data->ticks_layer);
+    text_layer_destroy(data->angle_layer);
+    text_layer_destroy(data->direction_layer);
+    inverter_layer_destroy(data->pointer_layer);
+    if(data->rotation_state.timer) {
+        app_timer_cancel(data->rotation_state.timer);
+    }
 }
 
 CompassWindow *compass_window_create() {
     Window *window = window_create();
     CompassWindowData *data = malloc(sizeof(CompassWindowData));
+
+    data->rotation_state.friction = 0.9;
+    data->rotation_state.attraction = 0.1;
 
     window_set_user_data(window, data);
 
@@ -173,3 +264,4 @@ void compass_window_destroy(CompassWindow *window) {
     free(window_get_user_data((Window *)window));
     window_destroy((Window *)window);
 }
+

@@ -15,7 +15,12 @@ typedef struct {
     float orientation_animation_start_value;
     Animation *orientation_animation;
 
+    AccelData last_accel_data;
 } DataProviderState;
+
+// TODO: get rid of me
+DataProviderState* dataProviderStateSingleton;
+
 
 static void schedule_update(DataProviderState *state);
 
@@ -116,6 +121,36 @@ DataProviderOrientation data_provider_get_orientation(DataProvider *provider) {
 }
 
 // ---------------
+// accelerometer
+
+
+static void data_provider_handle_accel_data(AccelData *data, uint32_t num_samples) {
+    DataProviderState *state = dataProviderStateSingleton;
+
+    const float f = 0.3;
+    state->last_accel_data = (AccelData){
+            .did_vibrate = data->did_vibrate,
+            .timestamp = data->timestamp,
+            .x = (int16_t) (data->x * f + (1-f) * state->last_accel_data.x),
+            .y = (int16_t) (data->y * f + (1-f) * state->last_accel_data.y),
+            .z = (int16_t) (data->z * f + (1-f) * state->last_accel_data.z),
+    };
+    call_handler_if_set(state, state->handlers.last_accel_data_changed);
+
+
+    if(state->last_accel_data.y < -700) {
+        data_provider_set_orientation((DataProvider *)state, DataProviderOrientationUpright);
+    } else if (state->last_accel_data.y > -500) {
+        data_provider_set_orientation((DataProvider *)state, DataProviderOrientationFlat);
+    }
+}
+
+AccelData data_provider_last_accel_data(DataProvider *provider) {
+    DataProviderState *state = dataProviderStateSingleton;
+    return state->last_accel_data;
+}
+
+// ---------------
 // lifecycle
 
 DataProvider *data_provider_create(void *user_data, DataProviderHandlers handlers) {
@@ -127,6 +162,11 @@ DataProvider *data_provider_create(void *user_data, DataProviderHandlers handler
     result->friction = 0.9;
     result->attraction = 0.1;
 
+    accel_service_set_sampling_rate(ACCEL_SAMPLING_50HZ);
+    accel_data_service_subscribe(1, data_provider_handle_accel_data);
+
+    dataProviderStateSingleton = result;
+
     return (DataProvider *)result;
 }
 
@@ -135,6 +175,7 @@ void data_provider_destroy(DataProvider *provider) {
     if(state->timer) {
         app_timer_cancel(state->timer);
     }
+    accel_data_service_unsubscribe();
 
     free(provider);
 }

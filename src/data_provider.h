@@ -9,6 +9,7 @@ typedef struct {
     DataProviderHandler presented_angle_changed;
     DataProviderHandler orientation_changed;
     DataProviderHandler orientation_transition_factor_changed;
+    DataProviderHandler last_accel_data_changed;
 } DataProviderHandlers;
 
 typedef enum {
@@ -26,6 +27,8 @@ void data_provider_set_target_angle(DataProvider *provider, int32_t angle);
 
 DataProviderOrientation data_provider_get_orientation(DataProvider *provider);
 void data_provider_set_orientation(DataProvider *provider, DataProviderOrientation orientation);
+
+AccelData data_provider_last_accel_data(DataProvider *provider);
 
 // NOTE: for debugging only
 float data_provider_get_orientation_transition_factor(DataProvider* provider);

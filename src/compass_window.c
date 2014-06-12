@@ -17,12 +17,23 @@ typedef struct {
     GRect pointer_layer_rect_band;
     InverterLayer *pointer_layer;
 
+    TextLayer *accel_layer;
+
     DataProvider* data_provider;
 
     bool shows_band;
     Animation *transition_animation;
     float transition_animation_start_value;
+
+    int64_t last_update_layout;
 } CompassWindowData;
+
+int64_t time_64() {
+    time_t s;
+    uint16_t ms;
+    time_ms(&s, &ms);
+    return (int64_t)s * 1000 + ms;
+}
 
 Window *compass_window_get_window(CompassWindow *window) {
     return (Window *)window;
@@ -37,7 +48,8 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     CompassWindowData *data = context;
 
     DataProviderOrientation o = data_provider_get_orientation(data->data_provider) == DataProviderOrientationFlat ? DataProviderOrientationUpright : DataProviderOrientationFlat;
-    data_provider_set_orientation(data->data_provider, o);
+//    data_provider_set_orientation(data->data_provider, o);
+    data_provider_set_target_angle(data->data_provider, (int32_t) (TRIG_MAX_ANGLE * 0.52));
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -72,6 +84,7 @@ GRect rect_blend(GRect *r1, GRect *r2, float f) {
 }
 
 static void compass_layer_update_layout(CompassWindowData *data) {
+    data->last_update_layout = time_64();
     int32_t angle = data_provider_get_presentation_angle(data->data_provider);
     ticks_layer_set_angle(data->ticks_layer, angle);
 
@@ -96,6 +109,13 @@ static void compass_layer_update_layout(CompassWindowData *data) {
     layer_set_frame(text_layer_get_layer(data->direction_layer), rect_blend(&data->direction_layer_rect_rose, &data->direction_layer_rect_band, transition_factor));
 
     layer_set_frame(inverter_layer_get_layer(data->pointer_layer), rect_blend(&data->pointer_layer_rect_rose, &data->pointer_layer_rect_band, transition_factor));
+
+    static char accel_text[40];
+    AccelData ad = data_provider_last_accel_data(data->data_provider);
+    snprintf(accel_text, sizeof(accel_text), "x:%d y:%d z:%d", (int)ad.x, (int)ad.y, (int)ad.z);
+//    APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", accel_text);
+    text_layer_set_text(data->accel_layer, accel_text);
+
 }
 
 static void compass_window_load(Window *window) {
@@ -130,21 +150,21 @@ static void compass_window_load(Window *window) {
     text_layer_set_background_color(data->angle_layer, GColorClear);
     layer_add_child(window_layer, text_layer_get_layer(data->angle_layer));
 
-
     GRect roseRect = ((GRect){.origin={0, 8}, .size={bounds.size.w, (int16_t)(bounds.size.h-15)}});
 
     data->ticks_layer = ticks_layer_create(roseRect);
     layer_add_child(window_layer, ticks_layer_get_layer(data->ticks_layer));
 
-    roseRect.origin.x += 10;
-    roseRect.origin.y += 10;
-    roseRect.size.h -= 20;
-    roseRect.size.w -= 20;
-
     data->pointer_layer_rect_rose = (GRect){{71,0}, {3,20}};
     data->pointer_layer_rect_band = (GRect){{71,18}, {3,40}};
     data->pointer_layer = inverter_layer_create(data->pointer_layer_rect_rose);
     layer_add_child(window_layer, inverter_layer_get_layer(data->pointer_layer));
+
+
+    data->accel_layer = text_layer_create((GRect){{0,40},{144, 20}});
+    text_layer_set_text_color(data->angle_layer, GColorWhite);
+    text_layer_set_background_color(data->angle_layer, GColorClear);
+//    layer_add_child(window_layer, text_layer_get_layer(data->accel_layer));
 
     data_provider_set_target_angle(data->data_provider, 45 * TRIG_MAX_ANGLE / 360);
 }
@@ -162,13 +182,23 @@ void handle_data_provider_update(DataProvider *provider, void* user_data) {
     compass_layer_update_layout(data);
 }
 
+void handle_high_frequent_data_provider_update(DataProvider *provider, void *user_data) {
+    CompassWindowData *data = user_data;
+
+    // only update here if last update has been a while
+    if(time_64() - data->last_update_layout > 1000/20) {
+        compass_layer_update_layout(data);
+    }
+}
+
 CompassWindow *compass_window_create() {
     Window *window = window_create();
     CompassWindowData *data = malloc(sizeof(CompassWindowData));
 
     data->data_provider = data_provider_create(data, (DataProviderHandlers) {
-        .presented_angle_changed = handle_data_provider_update,
-        .orientation_transition_factor_changed = handle_data_provider_update,
+            .presented_angle_changed = handle_data_provider_update,
+            .orientation_transition_factor_changed = handle_data_provider_update,
+            .last_accel_data_changed = handle_high_frequent_data_provider_update,
     });
 
     window_set_user_data(window, data);

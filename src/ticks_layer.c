@@ -1,9 +1,11 @@
 #include "ticks_layer.h"
 
 #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
 typedef struct {
     int32_t angle;
+    float transition_factor;
 } TicksLayerData;
 
 Layer *ticks_layer_get_layer(TicksLayer* ticksLayer) {
@@ -21,19 +23,44 @@ static TicksLayerData *ticks_layer_get_ticks_data(TicksLayer *layer) {
 static GPoint point_from_center(TicksLayer* layer, int32_t angle, int32_t radius) {
     const GRect bounds = layer_get_bounds(ticks_layer_get_layer(layer));
     const GPoint center = grect_center_point(&bounds);
-
     const TicksLayerData *data = ticks_layer_get_ticks_data(layer);
+
+    // polar
     const int32_t xx = sin_lookup(data->angle + angle);
     const int32_t yy = -cos_lookup(data->angle + angle);
 
-    return (GPoint){
+    GPoint polar = (GPoint){
         (int16_t)(xx * radius / TRIG_MAX_RATIO) + center.x,
         (int16_t)(yy * radius / TRIG_MAX_RATIO) + center.y,
     };
+
+    // cartesian
+    int32_t delta = (angle - data->angle) % TRIG_MAX_ANGLE;
+    while(delta > +TRIG_MAX_ANGLE / 2)delta -= TRIG_MAX_ANGLE;
+    while(delta < -TRIG_MAX_ANGLE / 2)delta += TRIG_MAX_ANGLE;
+
+    int32_t factor = bounds.size.w + bounds.size.h;
+    GPoint cartesian = (GPoint){
+        (int16_t) (center.x + (delta * factor / TRIG_MAX_ANGLE)),
+        (int16_t) (center.y - 2*radius + bounds.size.h * 0.7f)
+    };
+
+    float f = data->transition_factor;
+
+    return (GPoint){
+            (int16_t) (cartesian.x * f + (1-f) * polar.x),
+            (int16_t) (cartesian.y * f + (1-f) * polar.y),
+    };
+}
+
+bool ticks_layer_is_polar(TicksLayer *layer) {
+    return ticks_layer_get_ticks_data(layer)->transition_factor <= 0.01;
 }
 
 int32_t tick_len(TicksLayer *layer, int tick_idx) {
-    if(tick_idx == 0) return 0;
+    if(tick_idx == 0) {
+        return ticks_layer_is_polar(layer) ? 0 : 10;
+    }
     switch(tick_idx % 4) {
         case 0: return 10;
         case 2: return 5;
@@ -43,6 +70,7 @@ int32_t tick_len(TicksLayer *layer, int tick_idx) {
 
 void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
     TicksLayer *ticks_layer = (TicksLayer *)layer;
+    TicksLayerData *data = layer_get_ticks_data(layer);
     const GRect bounds = layer_get_bounds(layer);
     const GPoint center = grect_center_point(&bounds);
 
@@ -75,7 +103,7 @@ void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
     }
 
     // draw north
-    {
+    if(ticks_layer_is_polar(ticks_layer)){
         int32_t angle = TRIG_MAX_ANGLE * 5 / 360;
         int32_t ledge = 0;
         int32_t len = 10;
@@ -152,4 +180,13 @@ void ticks_layer_destroy(TicksLayer *layer) {
 void ticks_layer_set_angle(TicksLayer* layer, int32_t angle) {
     ticks_layer_get_ticks_data(layer)->angle = angle;
     layer_mark_dirty(ticks_layer_get_layer(layer));
+}
+
+void ticks_layer_set_transition_factor(TicksLayer *layer, float factor) {
+    ticks_layer_get_ticks_data(layer)->transition_factor = MIN(MAX(0, factor), 1);
+    layer_mark_dirty(ticks_layer_get_layer(layer));
+}
+
+float ticks_layer_get_transition_factor(TicksLayer *layer) {
+    return ticks_layer_get_ticks_data(layer)->transition_factor;
 }

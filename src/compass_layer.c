@@ -10,6 +10,7 @@ typedef struct {
     float friction;
     float attraction;
     AppTimer *timer;
+    CompassLayerCallback update_callback;
 } CompassLayerData;
 
 Layer *compass_layer_get_layer(CompassLayer *compassLayer) {
@@ -45,7 +46,8 @@ void compass_layer_update_proc(struct Layer *layer, GContext *ctx) {
 
     GPath *path = gpath_create(&points);
 
-    int32_t angle = layer_get_compass_data(layer)->presentation_angle;
+    CompassLayerData *data = layer_get_compass_data(layer);
+    int32_t angle = data->presentation_angle;
     gpath_rotate_to(path, angle);
     gpath_move_to(path, center);
     graphics_context_set_fill_color(ctx, GColorBlack);
@@ -76,6 +78,9 @@ void compass_layer_update_state(CompassLayer* layer) {
     data->angular_velocity = (int32_t) (data->angular_velocity * data->friction);
 
     layer_mark_dirty(compass_layer_get_layer(layer));
+    if(data->update_callback) {
+        data->update_callback((CompassLayer *)layer);
+    }
 
     data->timer = NULL;
     if((int32_t)(attraction*data->friction) != 0 || data->angular_velocity != 0) {
@@ -125,3 +130,12 @@ void compass_layer_set_attraction(CompassLayer *layer, float attraction) {
 float compass_layer_get_attraction(CompassLayer *layer) {
     return compass_layer_get_compass_data(layer)->attraction;
 }
+
+void compass_layer_set_update_callback(CompassLayer *layer, CompassLayerCallback cb) {
+    compass_layer_get_compass_data(layer)->update_callback = cb;
+}
+
+int32_t compass_layer_get_presentation_angle(CompassLayer *layer) {
+    return compass_layer_get_compass_data(layer)->presentation_angle;
+}
+

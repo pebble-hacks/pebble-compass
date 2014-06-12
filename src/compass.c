@@ -25,6 +25,10 @@ static void click_config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
+static void compass_layer_update_callback(CompassLayer* layer) {
+    ticks_layer_set_angle(ticks_layer, compass_layer_get_presentation_angle(layer));
+}
+
 static void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
@@ -34,13 +38,22 @@ static void window_load(Window *window) {
     ticks_layer = ticks_layer_create(roseRect);
     layer_add_child(window_layer, ticks_layer_get_layer(ticks_layer));
 
+    roseRect.origin.x += 10;
+    roseRect.origin.y += 10;
+    roseRect.size.h -= 20;
+    roseRect.size.w -= 20;
     compass_layer = compass_layer_create(roseRect);
+    compass_layer_set_update_callback(compass_layer, compass_layer_update_callback);
+    layer_set_hidden(compass_layer_get_layer(compass_layer), true);
     layer_add_child(window_layer, compass_layer_get_layer(compass_layer));
 
     text_layer = text_layer_create((GRect) { .origin = { 0, (int16_t)(bounds.size.h-20)}, .size = { bounds.size.w, 20 } });
     text_layer_set_text(text_layer, "Press a button");
     text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(text_layer));
+
+    InverterLayer *inverter_layer = inverter_layer_create(bounds);
+    layer_add_child(window_layer, inverter_layer_get_layer(inverter_layer));
 }
 
 static void window_unload(Window *window) {
@@ -71,4 +84,5 @@ int main(void) {
 
     app_event_loop();
     deinit();
+    return 0;
 }

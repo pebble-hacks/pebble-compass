@@ -11,3 +11,6 @@ void ticks_layer_set_angle(TicksLayer* layer, int32_t angle);
 
 float ticks_layer_get_transition_factor(TicksLayer *layer);
 void ticks_layer_set_transition_factor(TicksLayer *layer, float factor);
+
+bool ticks_layer_get_shows_band(TicksLayer *layer);
+void ticks_layer_set_shows_band(TicksLayer *layer, bool shows_band);

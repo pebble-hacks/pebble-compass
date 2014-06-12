@@ -6,6 +6,9 @@
 typedef struct {
     int32_t angle;
     float transition_factor;
+    bool shows_band;
+    Animation *transition_animation;
+    float transition_animation_start_value;
 } TicksLayerData;
 
 Layer *ticks_layer_get_layer(TicksLayer* ticksLayer) {
@@ -189,4 +192,38 @@ void ticks_layer_set_transition_factor(TicksLayer *layer, float factor) {
 
 float ticks_layer_get_transition_factor(TicksLayer *layer) {
     return ticks_layer_get_ticks_data(layer)->transition_factor;
+}
+
+static void ticks_layer_update_transition_factor(struct Animation *animation, const uint32_t time_normalized) {
+    TicksLayerData *data = ticks_layer_get_ticks_data((TicksLayer*)animation->context);
+    float f = (float)time_normalized / ANIMATION_NORMALIZED_MAX;
+    float target = data->shows_band ? 1 : 0;
+    data->transition_factor = target * f + (1-f) * data->transition_animation_start_value;
+    layer_mark_dirty(animation->context);
+}
+
+static AnimationImplementation transition_animation = {
+    .update = ticks_layer_update_transition_factor,
+};
+
+bool ticks_layer_get_shows_band(TicksLayer *layer) {
+    return ticks_layer_get_ticks_data(layer)->shows_band;
+}
+
+void ticks_layer_set_shows_band(TicksLayer *layer, bool shows_band) {
+    TicksLayerData *data = ticks_layer_get_ticks_data(layer);
+    if(data->shows_band == shows_band) return;
+
+    data->shows_band = shows_band;
+    if(!data->transition_animation) {
+        data->transition_animation = animation_create();
+        data->transition_animation->duration_ms = 200;
+        data->transition_animation->context = layer;
+        data->transition_animation->implementation = &transition_animation;
+    } else {
+        animation_unschedule(data->transition_animation);
+    }
+
+    data->transition_animation_start_value = data->transition_factor;
+    animation_schedule(data->transition_animation);
 }

@@ -23,8 +23,10 @@ static void compass_layer_update_callback(CompassLayer* layer);
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 //    compass_layer_set_angle(compass_layer, 0);
-    ticks_layer_set_transition_factor(ticks_layer, ticks_layer_get_transition_factor(ticks_layer) - 0.1f);
-    compass_layer_update_callback(compass_layer);
+//    ticks_layer_set_transition_factor(ticks_layer, ticks_layer_get_transition_factor(ticks_layer) - 0.1f);
+//    compass_layer_update_callback(compass_layer);
+
+    ticks_layer_set_shows_band(ticks_layer, !ticks_layer_get_shows_band(ticks_layer));
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -89,6 +91,16 @@ static void window_load(Window *window) {
     const int16_t text_height_rose = 24;
     const int16_t text_height_band = 55;
     const GFont text_font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+
+    const int16_t direction_layer_width = 40;
+    const int16_t direction_layer_margin_band = 40;
+    direction_layer_rect_rose = (GRect) { .origin = { bounds.size.w - direction_layer_width, (int16_t)(bounds.size.h- text_height_rose)}, .size = { direction_layer_width, text_height_rose} };
+    direction_layer_rect_band = (GRect) { .origin = { bounds.size.w - direction_layer_width-direction_layer_margin_band, (int16_t)(bounds.size.h- text_height_band)}, .size = { direction_layer_width, text_height_rose} };
+    direction_layer = text_layer_create(direction_layer_rect_rose);
+    text_layer_set_text_alignment(direction_layer, GTextAlignmentCenter);
+    text_layer_set_font(direction_layer, text_font);
+    layer_add_child(window_layer, text_layer_get_layer(direction_layer));
+
     const int16_t angle_layer_width_rose = 40;
     const int16_t angle_layer_width_band = 65;
 
@@ -99,14 +111,6 @@ static void window_load(Window *window) {
     text_layer_set_font(angle_layer, text_font);
     layer_add_child(window_layer, text_layer_get_layer(angle_layer));
 
-    const int16_t direction_layer_width = 40;
-    const int16_t direction_layer_margin_band = 30;
-    direction_layer_rect_rose = (GRect) { .origin = { bounds.size.w - direction_layer_width, (int16_t)(bounds.size.h- text_height_rose)}, .size = { direction_layer_width, text_height_rose} };
-    direction_layer_rect_band = (GRect) { .origin = { bounds.size.w - direction_layer_width-direction_layer_margin_band, (int16_t)(bounds.size.h- text_height_band)}, .size = { direction_layer_width, text_height_rose} };
-    direction_layer = text_layer_create(direction_layer_rect_rose);
-    text_layer_set_text_alignment(direction_layer, GTextAlignmentCenter);
-    text_layer_set_font(direction_layer, text_font);
-    layer_add_child(window_layer, text_layer_get_layer(direction_layer));
 
     GRect roseRect = ((GRect){.origin={0, 8}, .size={bounds.size.w, (int16_t)(bounds.size.h-15)}});
 

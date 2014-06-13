@@ -12,6 +12,12 @@
     "dummy": 0
   },
   "resources": {
-    "media": []
+    "media": [
+        {
+            "type": "png",
+            "name": "CROSS_HAIR_LARGE",
+            "file": "cross_hair_large.png"
+        }
+    ]
   }
 }

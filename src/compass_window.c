@@ -1,6 +1,7 @@
 #include "compass_window.h"
 #include "ticks_layer.h"
 #include "data_provider.h"
+#include "inverted_cross_hair_layer.h"
 
 typedef struct {
     GRect direction_layer_rect_rose;
@@ -26,6 +27,9 @@ typedef struct {
     float transition_animation_start_value;
 
     int64_t last_update_layout;
+
+    BitmapLayer *large_cross_hair_layer;
+    InvertedCrossHairLayer *small_cross_hair_layer;
 } CompassWindowData;
 
 int64_t time_64() {
@@ -70,16 +74,30 @@ static void click_config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
+GSize size_blend(GSize s1, GSize s2, float f) {
+    return (GSize){
+        (int16_t) (s1.w * (1-f) + f * s2.w),
+        (int16_t) (s1.h * (1-f) + f * s2.h),
+    };
+}
+
 GRect rect_blend(GRect *r1, GRect *r2, float f) {
     return (GRect){
-        {
+        .origin = {
             (int16_t) (r1->origin.x * (1-f) + f * r2->origin.x),
             (int16_t) (r1->origin.y * (1-f) + f * r2->origin.y),
         },
-        {
-            (int16_t) (r1->size.w * (1-f) + f * r2->size.w),
-            (int16_t) (r1->size.h * (1-f) + f * r2->size.h),
-        },
+       .size = size_blend(r1->size, r2->size, f),
+    };
+}
+
+GRect rect_centered_with_size(GRect *r1, GSize size, GPoint offset) {
+    return (GRect){
+            .origin = {
+                    (int16_t) ((r1->size.w - size.w) / 2 + r1->origin.x + offset.x),
+                    (int16_t) ((r1->size.h - size.h) / 2 + r1->origin.y + offset.y),
+            },
+            .size = size,
     };
 }
 
@@ -116,9 +134,20 @@ static void compass_layer_update_layout(CompassWindowData *data) {
 //    APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", accel_text);
     text_layer_set_text(data->accel_layer, accel_text);
 
+    GRect frame = layer_get_frame(ticks_layer_get_layer(data->ticks_layer));
+    const GBitmap *bmp = bitmap_layer_get_bitmap(data->large_cross_hair_layer);
+    layer_set_frame(bitmap_layer_get_layer(data->large_cross_hair_layer),
+            rect_centered_with_size(&frame, size_blend(bmp->bounds.size, GSizeZero, transition_factor), GPoint(1,0)));
+
+    int16_t d = 40;   // TODO: get rid of magic number
+    GPoint small_cross_hair_offset = GPoint((int16_t)(1 - ad.x / d), ad.y / d);
+    layer_set_frame(inverted_cross_hair_layer_get_layer(data->small_cross_hair_layer),
+            rect_centered_with_size(&frame, size_blend(GSize(17, 17), GSizeZero, transition_factor), small_cross_hair_offset));
 }
 
 static void compass_window_load(Window *window) {
+    // TODO: get rid of absolute coordinates
+
     CompassWindowData *data = window_get_user_data(window);
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
@@ -166,6 +195,14 @@ static void compass_window_load(Window *window) {
     text_layer_set_background_color(data->angle_layer, GColorClear);
 //    layer_add_child(window_layer, text_layer_get_layer(data->accel_layer));
 
+    GBitmap *bmp = gbitmap_create_with_resource(RESOURCE_ID_CROSS_HAIR_LARGE);
+    data->large_cross_hair_layer = bitmap_layer_create(GRectZero);
+    bitmap_layer_set_bitmap(data->large_cross_hair_layer, bmp);
+    layer_add_child(window_layer, bitmap_layer_get_layer(data->large_cross_hair_layer));
+
+    data->small_cross_hair_layer = inverted_cross_hair_layer_create(GRectZero);
+    layer_add_child(window_layer, inverted_cross_hair_layer_get_layer(data->small_cross_hair_layer));
+
     data_provider_set_target_angle(data->data_provider, 45 * TRIG_MAX_ANGLE / 360);
 }
 
@@ -175,6 +212,10 @@ static void compass_window_unload(Window *window) {
     text_layer_destroy(data->angle_layer);
     text_layer_destroy(data->direction_layer);
     inverter_layer_destroy(data->pointer_layer);
+
+    gbitmap_destroy((GBitmap *)bitmap_layer_get_bitmap(data->large_cross_hair_layer));
+    bitmap_layer_destroy(data->large_cross_hair_layer);
+
 }
 
 void handle_data_provider_update(DataProvider *provider, void* user_data) {
@@ -216,7 +257,10 @@ CompassWindow *compass_window_create() {
 void compass_window_destroy(CompassWindow *window) {
     CompassWindowData *data = window_get_user_data((Window *)window);
     data_provider_destroy(data->data_provider);
+
+    // TODO: destroy layers
     free(data);
+
     window_destroy((Window *)window);
 }
 

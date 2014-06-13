@@ -9,7 +9,10 @@
 /* Begin PBXBuildFile section */
 		255736F0D3A54BECA038480C /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93A3D2DC913D461FAA0E5AFB /* Foundation.framework */; };
 		8CE195ABAAC449D99B7EA8B6 /* compass.c in Sources */ = {isa = PBXBuildFile; fileRef = 261EAD6F25B94C658BFB3800 /* compass.c */; };
+		F26B0570FCD0E3078A858071 /* inverted_cross_hair_layer.c in Sources */ = {isa = PBXBuildFile; fileRef = F26B01BFB2F9776ECC5501E1 /* inverted_cross_hair_layer.c */; };
+		F26B077DE695B253922D4C53 /* inverted_cross_hair_layer.c in Sources */ = {isa = PBXBuildFile; fileRef = F26B0AC308552C4A14F6C66B /* inverted_cross_hair_layer.c */; };
 		F26B0AF15914EEE8E5419AD9 /* compass_window.c in Sources */ = {isa = PBXBuildFile; fileRef = F26B074529A615354B00BCFF /* compass_window.c */; };
+		F26B0B3C0F916A6E09D954CE /* inverted_cross_hair_layer.h in Sources */ = {isa = PBXBuildFile; fileRef = F26B06A1BEE36084143235A7 /* inverted_cross_hair_layer.h */; };
 		F26B0C5693F8166FA27215DA /* ticks_layer.c in Sources */ = {isa = PBXBuildFile; fileRef = F26B0CF75A40FD56A2CC9CAB /* ticks_layer.c */; };
 		F26B0C56B508D5D0B6FC378A /* needle_layer.c in Sources */ = {isa = PBXBuildFile; fileRef = F26B0B08DCBA1DD8D5C10EE3 /* needle_layer.c */; };
 /* End PBXBuildFile section */
@@ -20,10 +23,13 @@
 		93A3D2DC913D461FAA0E5AFB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		AA59459DC60B4EACA5D53298 /* fake-iOS-target.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "fake-iOS-target.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF716E33F0AF4C57B338048F /* appinfo.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; path = appinfo.json; sourceTree = "<group>"; };
+		F26B01BFB2F9776ECC5501E1 /* inverted_cross_hair_layer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = inverted_cross_hair_layer.c; sourceTree = "<group>"; };
 		F26B0470BEA3ABB62E2EC668 /* data_provider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = data_provider.h; sourceTree = "<group>"; };
 		F26B0599C51B88BF97F5A645 /* needle_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = needle_layer.h; sourceTree = "<group>"; };
+		F26B06A1BEE36084143235A7 /* inverted_cross_hair_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = inverted_cross_hair_layer.h; sourceTree = "<group>"; };
 		F26B074529A615354B00BCFF /* compass_window.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = compass_window.c; sourceTree = "<group>"; };
 		F26B097000ACCD1DD075E30C /* compass_window.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = compass_window.h; sourceTree = "<group>"; };
+		F26B0AC308552C4A14F6C66B /* inverted_cross_hair_layer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = inverted_cross_hair_layer.c; sourceTree = "<group>"; };
 		F26B0AC7E87FD83073330865 /* data_provider.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = data_provider.c; sourceTree = "<group>"; };
 		F26B0B08DCBA1DD8D5C10EE3 /* needle_layer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = needle_layer.c; sourceTree = "<group>"; };
 		F26B0C243DF5F196CF169AA8 /* ticks_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ticks_layer.h; sourceTree = "<group>"; };
@@ -54,6 +60,8 @@
 				F26B074529A615354B00BCFF /* compass_window.c */,
 				F26B0470BEA3ABB62E2EC668 /* data_provider.h */,
 				F26B0AC7E87FD83073330865 /* data_provider.c */,
+				F26B01BFB2F9776ECC5501E1 /* inverted_cross_hair_layer.c */,
+				F26B06A1BEE36084143235A7 /* inverted_cross_hair_layer.h */,
 			);
 			name = sources;
 			path = src;
@@ -73,6 +81,7 @@
 			isa = PBXGroup;
 			children = (
 				AA59459DC60B4EACA5D53298 /* fake-iOS-target.app */,
+				F26B0AC308552C4A14F6C66B /* inverted_cross_hair_layer.c */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -147,6 +156,9 @@
 				F26B0C56B508D5D0B6FC378A /* needle_layer.c in Sources */,
 				F26B0C5693F8166FA27215DA /* ticks_layer.c in Sources */,
 				F26B0AF15914EEE8E5419AD9 /* compass_window.c in Sources */,
+				F26B0570FCD0E3078A858071 /* inverted_cross_hair_layer.c in Sources */,
+				F26B077DE695B253922D4C53 /* inverted_cross_hair_layer.c in Sources */,
+				F26B0B3C0F916A6E09D954CE /* inverted_cross_hair_layer.h in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

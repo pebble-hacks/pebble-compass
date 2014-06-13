@@ -16,6 +16,7 @@ typedef struct {
     Animation *orientation_animation;
 
     AccelData last_accel_data;
+    AccelData damped_accel_data;
 } DataProviderState;
 
 // TODO: get rid of me
@@ -124,23 +125,28 @@ DataProviderOrientation data_provider_get_orientation(DataProvider *provider) {
 // accelerometer
 
 
+static void merge_accel_data(AccelData *dest, AccelData *next, float factor) {
+    *dest = (AccelData){
+            .did_vibrate = next->did_vibrate,
+            .timestamp = next->timestamp,
+            .x = (int16_t) (next->x * factor + (1- factor) * dest->x),
+            .y = (int16_t) (next->y * factor + (1- factor) * dest->y),
+            .z = (int16_t) (next->z * factor + (1- factor) * dest->z),
+    };
+
+}
+
 static void data_provider_handle_accel_data(AccelData *data, uint32_t num_samples) {
     DataProviderState *state = dataProviderStateSingleton;
 
-    const float f = 0.3;
-    state->last_accel_data = (AccelData){
-            .did_vibrate = data->did_vibrate,
-            .timestamp = data->timestamp,
-            .x = (int16_t) (data->x * f + (1-f) * state->last_accel_data.x),
-            .y = (int16_t) (data->y * f + (1-f) * state->last_accel_data.y),
-            .z = (int16_t) (data->z * f + (1-f) * state->last_accel_data.z),
-    };
+    merge_accel_data(&state->last_accel_data, data, 0.99);
+    merge_accel_data(&state->damped_accel_data, data, 0.3);
     call_handler_if_set(state, state->handlers.last_accel_data_changed);
 
 
-    if(state->last_accel_data.y < -700) {
+    if(state->damped_accel_data.y < -700) {
         data_provider_set_orientation((DataProvider *)state, DataProviderOrientationUpright);
-    } else if (state->last_accel_data.y > -500) {
+    } else if (state->damped_accel_data.y > -500) {
         data_provider_set_orientation((DataProvider *)state, DataProviderOrientationFlat);
     }
 }

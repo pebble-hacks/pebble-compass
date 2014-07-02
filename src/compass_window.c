@@ -239,12 +239,12 @@ CompassWindow *compass_window_create() {
     CompassWindowData *data = malloc(sizeof(CompassWindowData));
 
 
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "will call compass_start()");
+//    APP_LOG(APP_LOG_LEVEL_DEBUG, "will call compass_start()");
 //    mag_set_corr("00:17:E9:5E:DA:D9", 2628, -2368, -2178);
 //    mag_set_corr("00:17:E9:5E:DA:D9", 2628, -2368, -2178); // Heiko BB2
 //    mag_set_corr("00:17:E9:A6:A3:E8", -736, 363, 1451); // Heiko Black Steel
 
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "will query orientation");
+//    APP_LOG(APP_LOG_LEVEL_DEBUG, "will query orientation");
 
     data->data_provider = data_provider_create(data, (DataProviderHandlers) {
             .presented_angle_or_accel_data_changed = handle_data_provider_update,

@@ -26,8 +26,8 @@ static GPoint point_from_center(TicksLayer* layer, int32_t angle, int32_t radius
     const TicksLayerData *data = ticks_layer_get_ticks_data(layer);
 
     // polar
-    const int32_t xx = sin_lookup(data->angle + angle);
-    const int32_t yy = -cos_lookup(data->angle + angle);
+    const int32_t xx = sin_lookup(-data->angle + angle);
+    const int32_t yy = -cos_lookup(-data->angle + angle);
 
     GPoint polar = (GPoint){
         (int16_t)(xx * radius / TRIG_MAX_RATIO) + center.x,

@@ -148,11 +148,6 @@ static void compass_layer_update_layout(CompassWindowData *data) {
 
 static void compass_window_load(Window *window) {
     // TODO: get rid of absolute coordinates
-
-
-
-
-
     CompassWindowData *data = window_get_user_data(window);
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);

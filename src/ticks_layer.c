@@ -106,9 +106,10 @@ void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
         gpath_destroy(path);
     }
 
-    // draw north
-    if(ticks_layer_is_polar(ticks_layer)){
-        int32_t angle = TRIG_MAX_ANGLE * 5 / 360;
+    // draw north (can be omitted if fully transitioned to cartesian representation)
+    if(data->transition_factor < 1) {
+        int32_t angle_polar = TRIG_MAX_ANGLE * 5 / 360;
+        int32_t angle = (int32_t) (0 * data->transition_factor + (1-data->transition_factor) * angle_polar);
         int32_t ledge = 0;
         int32_t len = 10;
         GPathInfo points = {

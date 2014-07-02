@@ -137,13 +137,24 @@ static void compass_layer_update_layout(CompassWindowData *data) {
 
     GRect frame = layer_get_frame(ticks_layer_get_layer(data->ticks_layer));
     const GBitmap *bmp = bitmap_layer_get_bitmap(data->large_cross_hair_layer);
+
+    // make crosses move down outside the screen when transition to cartesian representation
+    int16_t transition_dy = (int16_t) (transition_factor * frame.size.h);
+
     layer_set_frame(bitmap_layer_get_layer(data->large_cross_hair_layer),
-            rect_centered_with_size(&frame, size_blend(bmp->bounds.size, GSizeZero, transition_factor), GPoint(1,0)));
+            rect_centered_with_size(&frame, bmp->bounds.size, GPoint(1,transition_dy)));
 
     int16_t d = 40;   // TODO: get rid of magic number
     GPoint small_cross_hair_offset = GPoint((int16_t)(1 - ad.x / d), ad.y / d);
+    // make small cross hair stick to center during transition until almost back to polar representation
+    float tf2 = (1-transition_factor) * (1-transition_factor);
+    tf2 *= tf2;
+    small_cross_hair_offset.x *= tf2;
+    small_cross_hair_offset.y *= tf2;
+    small_cross_hair_offset.y += transition_dy;
+
     layer_set_frame(inverted_cross_hair_layer_get_layer(data->small_cross_hair_layer),
-            rect_centered_with_size(&frame, size_blend(GSize(17, 17), GSizeZero, transition_factor), small_cross_hair_offset));
+            rect_centered_with_size(&frame, GSize(17, 17), small_cross_hair_offset));
 }
 
 static void compass_window_load(Window *window) {

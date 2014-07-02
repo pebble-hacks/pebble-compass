@@ -214,7 +214,7 @@ static void compass_window_load(Window *window) {
     data->small_cross_hair_layer = inverted_cross_hair_layer_create(GRectZero);
     layer_add_child(window_layer, inverted_cross_hair_layer_get_layer(data->small_cross_hair_layer));
 
-    data_provider_set_target_angle(data->data_provider, 45 * TRIG_MAX_ANGLE / 360);
+    data_provider_set_target_angle(data->data_provider, (360-45) * TRIG_MAX_ANGLE / 360);
 }
 
 static void compass_window_unload(Window *window) {

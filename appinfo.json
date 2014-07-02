@@ -1,7 +1,7 @@
 {
   "uuid": "49827722-4f3b-4e3f-9e96-d660089f50c1",
-  "shortName": "compass",
-  "longName": "compass",
+  "shortName": "Compass",
+  "longName": "Compass",
   "companyName": "MakeAwesomeHappen",
   "versionCode": 1,
   "versionLabel": "1.0.0",
@@ -13,6 +13,12 @@
   },
   "resources": {
     "media": [
+        {
+            "type": "png",
+            "name": "ICON",
+            "file": "icon.png",
+            "menuIcon": true
+        },
         {
             "type": "png",
             "name": "CROSS_HAIR_LARGE",

@@ -96,9 +96,24 @@ float data_provider_get_orientation_transition_factor(DataProvider* provider) {
     return state->orientation_transition_factor;
 }
 
+float CubicEaseInOut(float p)
+{
+    if(p < 0.5)
+    {
+        return 4 * p * p * p;
+    }
+    else
+    {
+        float f = ((2 * p) - 2);
+        return 0.5f * f * f * f + 1;
+    }
+}
+
 static void data_provider_update_transition_factor(struct Animation *animation, const uint32_t time_normalized) {
     DataProviderState *state = animation->context;
     float f = (float)time_normalized / ANIMATION_NORMALIZED_MAX;
+    f = CubicEaseInOut(f); // manual easing, see PBL-6328
+
     float target = state->orientation == DataProviderOrientationUpright ? 1 : 0;
 
     data_provider_set_orientation_transition_factor((DataProvider *)state, target * f + (1-f) * state->orientation_animation_start_value);
@@ -118,7 +133,7 @@ void data_provider_set_orientation(DataProvider *provider, DataProviderOrientati
     // TODO: refactor to make this a property animation
     if(!state->orientation_animation) {
         state->orientation_animation = animation_create();
-        state->orientation_animation->duration_ms = 200;
+        state->orientation_animation->duration_ms = 450;
         state->orientation_animation->context = state;
         state->orientation_animation->implementation = &transition_animation;
     } else {

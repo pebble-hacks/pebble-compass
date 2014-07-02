@@ -30,6 +30,7 @@ typedef struct {
 
     BitmapLayer *large_cross_hair_layer;
     InvertedCrossHairLayer *small_cross_hair_layer;
+    MagData data;
 } CompassWindowData;
 
 int64_t time_64() {
@@ -52,8 +53,8 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     CompassWindowData *data = context;
 
     DataProviderOrientation o = data_provider_get_orientation(data->data_provider) == DataProviderOrientationFlat ? DataProviderOrientationUpright : DataProviderOrientationFlat;
-//    data_provider_set_orientation(data->data_provider, o);
-    data_provider_set_target_angle(data->data_provider, (int32_t) (TRIG_MAX_ANGLE * 0.52));
+    data_provider_set_orientation(data->data_provider, o);
+//    data_provider_delta_angle(data->data_provider, (int32_t) (TRIG_MAX_ANGLE * 0.52));
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -65,7 +66,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     CompassWindowData *data = context;
-    data_provider_set_target_angle(data->data_provider, data_provider_get_target_angle(data->data_provider) + TRIG_MAX_ANGLE / 5);
+    data_provider_delta_heading_angle(data->data_provider, TRIG_MAX_ANGLE / 10);
 }
 
 static void click_config_provider(void *context) {
@@ -148,6 +149,10 @@ static void compass_layer_update_layout(CompassWindowData *data) {
 static void compass_window_load(Window *window) {
     // TODO: get rid of absolute coordinates
 
+
+
+
+
     CompassWindowData *data = window_get_user_data(window);
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
@@ -223,23 +228,21 @@ void handle_data_provider_update(DataProvider *provider, void* user_data) {
     compass_layer_update_layout(data);
 }
 
-void handle_high_frequent_data_provider_update(DataProvider *provider, void *user_data) {
-    CompassWindowData *data = user_data;
-
-    // only update here if last update has been a while
-    if(time_64() - data->last_update_layout > 1000/20) {
-        compass_layer_update_layout(data);
-    }
-}
-
 CompassWindow *compass_window_create() {
     Window *window = window_create();
     CompassWindowData *data = malloc(sizeof(CompassWindowData));
 
+
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "will call compass_start()");
+//    mag_set_corr("00:17:E9:5E:DA:D9", 2628, -2368, -2178);
+//    mag_set_corr("00:17:E9:5E:DA:D9", 2628, -2368, -2178); // Heiko BB2
+//    mag_set_corr("00:17:E9:A6:A3:E8", -736, 363, 1451); // Heiko Black Steel
+
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "will query orientation");
+
     data->data_provider = data_provider_create(data, (DataProviderHandlers) {
-            .presented_angle_changed = handle_data_provider_update,
+            .presented_angle_or_accel_data_changed = handle_data_provider_update,
             .orientation_transition_factor_changed = handle_data_provider_update,
-            .last_accel_data_changed = handle_high_frequent_data_provider_update,
     });
 
     window_set_user_data(window, data);

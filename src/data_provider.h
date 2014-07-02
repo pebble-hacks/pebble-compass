@@ -5,11 +5,12 @@ typedef struct DataProvider DataProvider;
 typedef void (*DataProviderHandler)(DataProvider *provider, void *user_data);
 
 typedef struct {
-    DataProviderHandler input_angle_changed;
-    DataProviderHandler presented_angle_changed;
+    DataProviderHandler input_heading_changed;
+//    DataProviderHandler presented_angle_changed;
     DataProviderHandler orientation_changed;
     DataProviderHandler orientation_transition_factor_changed;
-    DataProviderHandler last_accel_data_changed;
+    DataProviderHandler input_accel_data_changed;
+    DataProviderHandler presented_angle_or_accel_data_changed;
 } DataProviderHandlers;
 
 typedef enum {
@@ -24,6 +25,8 @@ int32_t data_provider_get_presentation_angle(DataProvider *provider);
 
 int32_t data_provider_get_target_angle(DataProvider *provider);
 void data_provider_set_target_angle(DataProvider *provider, int32_t angle);
+
+void data_provider_delta_heading_angle(DataProvider *provider, int32_t angle);
 
 DataProviderOrientation data_provider_get_orientation(DataProvider *provider);
 void data_provider_set_orientation(DataProvider *provider, DataProviderOrientation orientation);

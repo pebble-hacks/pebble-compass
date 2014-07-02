@@ -1,3 +1,4 @@
+#include <pebble.h>
 #include "data_provider.h"
 
 typedef struct {
@@ -17,6 +18,8 @@ typedef struct {
 
     AccelData last_accel_data;
     AccelData damped_accel_data;
+
+    CompassHeadingData heading;
 } DataProviderState;
 
 // TODO: get rid of me
@@ -37,14 +40,18 @@ static void update_state(DataProviderState *state) {
     state->angular_velocity += attraction;
     state->angular_velocity = (int32_t) (state->angular_velocity * state->friction);
 
-    call_handler_if_set(state, state->handlers.presented_angle_changed);
+    call_handler_if_set(state, state->handlers.presented_angle_or_accel_data_changed);
+
+//    CompassHeading heading = state->heading.is_declination_valid ? state->heading.true_heading : state->heading.magnetic_heading;
+    CompassHeading heading = state->heading.magnetic_heading;
+    state->target_angle = heading;
 
     state->timer = NULL;
-    if((int32_t)(attraction*state->friction) != 0 || state->angular_velocity != 0) {
+//    if((int32_t)(attraction*state->friction) != 0 || state->angular_velocity != 0) {
         schedule_update(state);
-    } else {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "NeedleLayer rested");
-    }
+//    } else {
+//        APP_LOG(APP_LOG_LEVEL_DEBUG, "NeedleLayer rested");
+//    }
 }
 
 int32_t data_provider_get_presentation_angle(DataProvider *provider) {
@@ -66,6 +73,15 @@ int32_t data_provider_get_target_angle(DataProvider *provider) {
 void data_provider_set_target_angle(DataProvider *provider, int32_t angle) {
     DataProviderState *state = (DataProviderState *) provider;
     state->target_angle = angle;
+    state->heading.magnetic_heading = angle;
+    state->heading.true_heading = angle;
+    schedule_update(state);
+}
+
+void data_provider_delta_heading_angle(DataProvider *provider, int32_t delta) {
+    DataProviderState *state = (DataProviderState *) provider;
+    state->heading.magnetic_heading += delta;
+    state->heading.true_heading += delta;
     schedule_update(state);
 }
 
@@ -137,11 +153,12 @@ static void merge_accel_data(AccelData *dest, AccelData *next, float factor) {
 }
 
 static void data_provider_handle_accel_data(AccelData *data, uint32_t num_samples) {
+//    APP_LOG(APP_LOG_LEVEL_DEBUG, "data_provider_handle_accel_data");
     DataProviderState *state = dataProviderStateSingleton;
 
     merge_accel_data(&state->last_accel_data, data, 0.99);
     merge_accel_data(&state->damped_accel_data, data, 0.3);
-    call_handler_if_set(state, state->handlers.last_accel_data_changed);
+    call_handler_if_set(state, state->handlers.input_accel_data_changed);
 
 
     if(state->damped_accel_data.y < -700) {
@@ -156,6 +173,13 @@ AccelData data_provider_last_accel_data(DataProvider *provider) {
     return state->last_accel_data;
 }
 
+void data_provider_handle_compass_data(CompassHeadingData heading) {
+    DataProviderState *state = dataProviderStateSingleton;
+
+    state->heading = heading;
+    call_handler_if_set(state, state->handlers.input_heading_changed);
+}
+
 // ---------------
 // lifecycle
 
@@ -166,12 +190,16 @@ DataProvider *data_provider_create(void *user_data, DataProviderHandlers handler
     result->handlers = handlers;
 
     result->friction = 0.9;
-    result->attraction = 0.1;
-
-    accel_service_set_sampling_rate(ACCEL_SAMPLING_50HZ);
-    accel_data_service_subscribe(1, data_provider_handle_accel_data);
+    result->attraction = 0.05;
 
     dataProviderStateSingleton = result;
+
+//    compass_service_subscribe(data_provider_handle_compass_data);
+
+//    accel_service_set_sampling_rate(ACCEL_SAMPLING_50HZ);
+//    accel_data_service_subscribe(1, data_provider_handle_accel_data);
+
+    schedule_update(result);
 
     return (DataProvider *)result;
 }
@@ -182,6 +210,7 @@ void data_provider_destroy(DataProvider *provider) {
         app_timer_cancel(state->timer);
     }
     accel_data_service_unsubscribe();
+    compass_service_unsubscribe();
 
     free(provider);
 }

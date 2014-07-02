@@ -36,7 +36,10 @@ static void call_handler_if_set(DataProviderState *state, DataProviderHandler ha
 
 static void update_state(DataProviderState *state) {
     state->presentation_angle = state->presentation_angle + state->angular_velocity;
-    int32_t attraction = (int32_t)((state->target_angle - state->presentation_angle) * state->attraction);
+    int32_t distance = state->target_angle - state->presentation_angle;
+    while(distance < -TRIG_MAX_ANGLE/2) distance += TRIG_MAX_ANGLE;
+    while(distance > +TRIG_MAX_ANGLE/2) distance -= TRIG_MAX_ANGLE;
+    int32_t attraction = (int32_t)(distance * state->attraction);
     state->angular_velocity += attraction;
     state->angular_velocity = (int32_t) (state->angular_velocity * state->friction);
 
@@ -74,6 +77,8 @@ void data_provider_set_target_angle(DataProvider *provider, int32_t angle) {
 void data_provider_delta_heading_angle(DataProvider *provider, int32_t delta) {
     DataProviderState *state = (DataProviderState *) provider;
     state->target_angle += delta;
+    while(state->target_angle < 0) state->target_angle += TRIG_MAX_ANGLE;
+    while(state->target_angle > TRIG_MAX_ANGLE) state->target_angle -= TRIG_MAX_ANGLE;
     schedule_update(state);
 }
 

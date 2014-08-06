@@ -32,6 +32,9 @@ DataProviderOrientation data_provider_get_orientation(DataProvider *provider);
 void data_provider_set_orientation(DataProvider *provider, DataProviderOrientation orientation);
 
 AccelData data_provider_last_accel_data(DataProvider *provider);
+AccelData data_provider_get_damped_accel_data(DataProvider *provider);
+
+bool data_provider_compass_needs_calibration(DataProvider *provider);
 
 // NOTE: for debugging only
 float data_provider_get_orientation_transition_factor(DataProvider* provider);

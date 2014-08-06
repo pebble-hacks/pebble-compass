@@ -185,7 +185,28 @@ AccelData data_provider_last_accel_data(DataProvider *provider) {
     return state->last_accel_data;
 }
 
+AccelData data_provider_get_damped_accel_data(DataProvider *provider) {
+    DataProviderState *state = dataProviderStateSingleton;
+    return state->damped_accel_data;
+}
+
+bool data_provider_compass_needs_calibration(DataProvider *provider) {
+    DataProviderState *state = dataProviderStateSingleton;
+
+        static int t;
+        t++;
+        if(t % 20 == 0) {
+            APP_LOG(APP_LOG_LEVEL_DEBUG, "compass status: %d", state->heading.compass_status);
+        }
+
+
+    return state->heading.compass_status == CompassStatusDataInvalid;
+}
+
 void data_provider_handle_compass_data(CompassHeadingData heading) {
+
+//    APP_LOG(APP_LOG_LEVEL_DEBUG, "data_provider_handle_compass_data");
+
     DataProviderState *state = dataProviderStateSingleton;
 
     state->heading = heading;
@@ -205,6 +226,7 @@ DataProvider *data_provider_create(void *user_data, DataProviderHandlers handler
 
     result->friction = 0.9;
     result->attraction = 0.05;
+    result->heading.compass_status = CompassStatusCalibrated; // assume calibrated data on default
 
     dataProviderStateSingleton = result;
 

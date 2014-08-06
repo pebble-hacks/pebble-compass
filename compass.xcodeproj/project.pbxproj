@@ -13,6 +13,7 @@
 		7A9E5AA11C1D4195893BB797 /* needle_layer.c in Sources */ = {isa = PBXBuildFile; fileRef = 268D161C843D4071AD67C4B6 /* needle_layer.c */; };
 		A4B584C852184504ADA49D48 /* compass_window.c in Sources */ = {isa = PBXBuildFile; fileRef = ADB2A6EE340241B9A8E293EA /* compass_window.c */; };
 		B27CF7521DA04132B83329CC /* inverted_cross_hair_layer.c in Sources */ = {isa = PBXBuildFile; fileRef = 528BFF1E7A6F401CA7C872DA /* inverted_cross_hair_layer.c */; };
+		F26B030E30C6C2E6E5A8CAF4 /* compass_calibration_window.c in Sources */ = {isa = PBXBuildFile; fileRef = F26B0D4A4E5971313622CFAA /* compass_calibration_window.c */; };
 		F317B0B81961421799EA3295 /* compass.c in Sources */ = {isa = PBXBuildFile; fileRef = 9A6FEAE5B1C244A891B53B24 /* compass.c */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +32,8 @@
 		C04D20D2F4EC49FD8C3656B0 /* ticks_layer.c */ = {isa = PBXFileReference; includeInIndex = 1; path = ticks_layer.c; sourceTree = "<group>"; };
 		E3663EE5B5274FAF938ACEA3 /* inverted_cross_hair_layer.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = inverted_cross_hair_layer.h; sourceTree = "<group>"; };
 		EA6B93A3196748638C0EC5EA /* ticks_layer.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = ticks_layer.h; sourceTree = "<group>"; };
+		F26B0BA049AD021E5A0A2FAA /* compass_calibration_window.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = compass_calibration_window.h; sourceTree = "<group>"; };
+		F26B0D4A4E5971313622CFAA /* compass_calibration_window.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = compass_calibration_window.c; sourceTree = "<group>"; };
 		FC023B91321B410D9764B46D /* appinfo.json */ = {isa = PBXFileReference; includeInIndex = 1; path = appinfo.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -68,6 +71,8 @@
 				E3663EE5B5274FAF938ACEA3 /* inverted_cross_hair_layer.h */,
 				9818BABD55B54F0682CC3AEE /* needle_layer.h */,
 				EA6B93A3196748638C0EC5EA /* ticks_layer.h */,
+				F26B0D4A4E5971313622CFAA /* compass_calibration_window.c */,
+				F26B0BA049AD021E5A0A2FAA /* compass_calibration_window.h */,
 			);
 			name = sources;
 			path = src;
@@ -156,6 +161,7 @@
 				B27CF7521DA04132B83329CC /* inverted_cross_hair_layer.c in Sources */,
 				7A9E5AA11C1D4195893BB797 /* needle_layer.c in Sources */,
 				10BCE25C2972446D9B1067ED /* ticks_layer.c in Sources */,
+				F26B030E30C6C2E6E5A8CAF4 /* compass_calibration_window.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

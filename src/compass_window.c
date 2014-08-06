@@ -2,8 +2,10 @@
 #include "ticks_layer.h"
 #include "data_provider.h"
 #include "inverted_cross_hair_layer.h"
+#include "compass_calibration_window.h"
 
 typedef struct {
+    bool window_appeared;
     GRect direction_layer_rect_rose;
     GRect direction_layer_rect_band;
     TextLayer *direction_layer;
@@ -31,6 +33,8 @@ typedef struct {
     BitmapLayer *large_cross_hair_layer;
     InvertedCrossHairLayer *small_cross_hair_layer;
     MagData data;
+
+    CompassCalibrationWindow *calibration_window;
 } CompassWindowData;
 
 int64_t time_64() {
@@ -217,6 +221,11 @@ static void compass_window_load(Window *window) {
     data_provider_set_target_angle(data->data_provider, (360-45) * TRIG_MAX_ANGLE / 360);
 }
 
+static void compass_window_appear(Window *window) {
+    CompassWindowData *data = window_get_user_data(window);
+    data->window_appeared = true;
+}
+
 static void compass_window_unload(Window *window) {
     CompassWindowData *data = window_get_user_data(window);
     ticks_layer_destroy(data->ticks_layer);
@@ -231,7 +240,31 @@ static void compass_window_unload(Window *window) {
 
 void handle_data_provider_update(DataProvider *provider, void* user_data) {
     CompassWindowData *data = user_data;
-    compass_layer_update_layout(data);
+    if(data->calibration_window && window_stack_get_top_window() == compass_calibration_window_get_window(data->calibration_window)){
+//        AccelData accel_data = data_provider_last_accel_data(provider);
+
+        AccelData accel_data = data_provider_get_damped_accel_data(provider);
+        int32_t angle = atan2_lookup(accel_data.y, accel_data.x) + 90 * TRIG_MAX_ANGLE / 360;
+        int intensity = abs(accel_data.z / 5);
+        intensity = intensity>255 ? 255 : intensity;
+        intensity = 255 - intensity;
+
+        compass_calibration_window_set_current_angle(data->calibration_window, angle);
+        compass_calibration_window_merge_value(data->calibration_window, angle, (uint8_t) intensity);
+
+        if(!data_provider_compass_needs_calibration(provider)) {
+            window_stack_pop(true);
+        }
+    } else {
+        compass_layer_update_layout(data);
+
+        if(data->window_appeared && data_provider_compass_needs_calibration(provider)) {
+            if(!data->calibration_window) {
+                data->calibration_window = compass_calibration_window_create();
+            }
+            window_stack_push(compass_calibration_window_get_window(data->calibration_window), true);
+        }
+    }
 }
 
 CompassWindow *compass_window_create() {
@@ -256,6 +289,7 @@ CompassWindow *compass_window_create() {
     window_set_window_handlers(window, (WindowHandlers) {
             .load = compass_window_load,
             .unload = compass_window_unload,
+            .appear = compass_window_appear,
     });
     window_set_click_config_provider_with_context(window, click_config_provider, data);
     window_set_background_color(window, GColorBlack);

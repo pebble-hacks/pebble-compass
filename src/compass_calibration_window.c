@@ -183,16 +183,25 @@ static void window_unload(Window *window) {
     memset(data, 0, sizeof(CompassCalibrationWindowData));
 }
 
-void fill_fake_data(CompassCalibrationWindowData *data) {
+static void fill_fake_data(CompassCalibrationWindowData *data) {
     int b = (int) (CALIBRATION_NUM_SEGMENTS * 0.6);
     data->segment_value[b+0] = CALIBRATION_THRESHOLD_VISITED;
     data->segment_value[b+1] = CALIBRATION_THRESHOLD_MID;
     data->segment_value[b+2] = CALIBRATION_THRESHOLD_FILLED;
 }
 
+static void do_nothing_click_handler(ClickRecognizerRef recognizer, void *context) {
+    // prevents window from being dismissed by user
+}
+
+static void click_config_provider(void *context) {
+    window_single_click_subscribe(BUTTON_ID_BACK, do_nothing_click_handler);
+}
+
 CompassCalibrationWindow *compass_calibration_window_create() {
     Window *window = window_create();
     window_set_background_color(window, CalibrationWindowBackgroundColor);
+    window_set_click_config_provider(window, click_config_provider);
 
     CompassCalibrationWindowData *data = malloc(sizeof(CompassCalibrationWindowData));
     memset(data, 0, sizeof(CompassCalibrationWindowData));

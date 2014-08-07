@@ -244,13 +244,7 @@ void handle_data_provider_update(DataProvider *provider, void* user_data) {
 //        AccelData accel_data = data_provider_last_accel_data(provider);
 
         AccelData accel_data = data_provider_get_damped_accel_data(provider);
-        int32_t angle = atan2_lookup(accel_data.y, accel_data.x) + 90 * TRIG_MAX_ANGLE / 360;
-        int intensity = abs(accel_data.z / 5);
-        intensity = intensity>255 ? 255 : intensity;
-        intensity = 255 - intensity;
-
-        compass_calibration_window_set_current_angle(data->calibration_window, angle);
-        compass_calibration_window_merge_value(data->calibration_window, angle, (uint8_t) intensity);
+        compass_calibration_window_apply_accel_data(data->calibration_window, accel_data);
 
         if(!data_provider_compass_needs_calibration(provider)) {
             window_stack_pop(true);

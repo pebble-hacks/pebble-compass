@@ -8,5 +8,6 @@ CompassCalibrationWindow *compass_calibration_window_create();
 void compass_calibration_window_destroy(CompassCalibrationWindow *window);
 
 void compass_calibration_window_merge_value(CompassCalibrationWindow *window, int32_t angle, uint8_t intensity);
-
 void compass_calibration_window_set_current_angle(CompassCalibrationWindow *window, int32_t angle);
+
+void compass_calibration_window_apply_accel_data(CompassCalibrationWindow *calibration_window, AccelData accel_data);

@@ -67,6 +67,16 @@ void compass_calibration_window_merge_value(CompassCalibrationWindow *window, in
     update_description_if_neeed(data);
 }
 
+void compass_calibration_window_apply_accel_data(CompassCalibrationWindow *calibration_window, AccelData accel_data) {
+    int32_t angle = atan2_lookup(accel_data.y, accel_data.x) + 90 * TRIG_MAX_ANGLE / 360;
+    int intensity = abs(accel_data.z / 5);
+    intensity = intensity>255 ? 255 : intensity;
+    intensity = 255 - intensity;
+
+    compass_calibration_window_set_current_angle(calibration_window, angle);
+    compass_calibration_window_merge_value(calibration_window, angle, (uint8_t) intensity);
+}
+
 Window *compass_calibration_window_get_window(CompassCalibrationWindow *window) {
     return (Window *)window;
 }

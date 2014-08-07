@@ -295,6 +295,7 @@ CompassWindow *compass_window_create() {
 void compass_window_destroy(CompassWindow *window) {
     CompassWindowData *data = window_get_user_data((Window *)window);
     data_provider_destroy(data->data_provider);
+    compass_calibration_window_destroy(data->calibration_window);
 
     // TODO: destroy layers
     free(data);

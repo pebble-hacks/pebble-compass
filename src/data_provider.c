@@ -193,11 +193,11 @@ AccelData data_provider_get_damped_accel_data(DataProvider *provider) {
 bool data_provider_compass_needs_calibration(DataProvider *provider) {
     DataProviderState *state = dataProviderStateSingleton;
 
-        static int t;
-        t++;
-        if(t % 20 == 0) {
-            APP_LOG(APP_LOG_LEVEL_DEBUG, "compass status: %d", state->heading.compass_status);
-        }
+//        static int t;
+//        t++;
+//        if(t % 20 == 0) {
+//            APP_LOG(APP_LOG_LEVEL_DEBUG, "compass status: %d", state->heading.compass_status);
+//        }
 
 
     return state->heading.compass_status == CompassStatusDataInvalid;

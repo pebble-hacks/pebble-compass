@@ -36,6 +36,25 @@ void compass_calibration_window_set_current_angle(CompassCalibrationWindow *wind
     layer_mark_dirty(window_get_root_layer(w));
 }
 
+void update_description_if_neeed(CompassCalibrationWindowData *data) {// update instructions of necessary
+    bool all_fully_filled = true;
+    for(int i=0; i<CALIBRATION_NUM_SEGMENTS; i++) {
+       if(data->segment_value[i] < CALIBRATION_THRESHOLD_VISITED) return;
+       if(data->segment_value[i] < CALIBRATION_THRESHOLD_FILLED) {
+           all_fully_filled = false;
+       }
+    }
+
+    if(all_fully_filled) {
+        text_layer_set_text(data->headline_layer, "More!");
+        text_layer_set_text(data->description_layer, "Try some fancy dance?");
+    } else {
+        // all segments have been visited, encourage user to tilt more!
+        text_layer_set_text(data->headline_layer, "Tilt more!");
+        text_layer_set_text(data->description_layer, "Fill the ring\ncompletely");
+    }
+}
+
 void compass_calibration_window_merge_value(CompassCalibrationWindow *window, int32_t angle, uint8_t intensity) {
     const Window *w = (Window*) window;
     CompassCalibrationWindowData *data = window_get_user_data(w);
@@ -45,6 +64,7 @@ void compass_calibration_window_merge_value(CompassCalibrationWindow *window, in
         data->segment_value[segment] = intensity;
         layer_mark_dirty(window_get_root_layer(w));
     }
+    update_description_if_neeed(data);
 }
 
 Window *compass_calibration_window_get_window(CompassCalibrationWindow *window) {
@@ -121,6 +141,7 @@ TextLayer * create_and_add_text_layer(Layer *window_layer, GRect *all_text_rect,
     const GTextAlignment text_alignment = GTextAlignmentCenter;
 
     GRect label_rect = (GRect){.size = graphics_text_layout_get_content_size(text, font, *all_text_rect, GTextOverflowModeWordWrap, text_alignment)};
+    label_rect.size.h += 5; // everything below baseline...
     grect_align(&label_rect, all_text_rect, alignment, true);
 
     TextLayer *layer = text_layer_create(label_rect);
@@ -146,7 +167,7 @@ static void window_load(Window *window) {
     layer_set_update_proc(data->indicator_layer, draw_indicator);
     layer_add_child(window_layer, data->indicator_layer);
 
-    GRect all_text_rect = (GRect){.size = GSize(100, 55)};
+    GRect all_text_rect = (GRect){.size = GSize(100, 60)};
     grect_align(&all_text_rect, &frame, GAlignCenter, true);
     data->headline_layer = create_and_add_text_layer(window_layer, &all_text_rect, GAlignTop, FONT_KEY_GOTHIC_18_BOLD, "Calibration");
     data->description_layer = create_and_add_text_layer(window_layer, &all_text_rect, GAlignBottom, FONT_KEY_GOTHIC_18, "Tilt Pebble to\nroll ball around");
@@ -163,9 +184,10 @@ static void window_unload(Window *window) {
 }
 
 void fill_fake_data(CompassCalibrationWindowData *data) {
-    data->segment_value[13] = CALIBRATION_THRESHOLD_VISITED;
-    data->segment_value[14] = CALIBRATION_THRESHOLD_MID;
-    data->segment_value[15] = CALIBRATION_THRESHOLD_FILLED;
+    int b = (int) (CALIBRATION_NUM_SEGMENTS * 0.6);
+    data->segment_value[b+0] = CALIBRATION_THRESHOLD_VISITED;
+    data->segment_value[b+1] = CALIBRATION_THRESHOLD_MID;
+    data->segment_value[b+2] = CALIBRATION_THRESHOLD_FILLED;
 }
 
 CompassCalibrationWindow *compass_calibration_window_create() {

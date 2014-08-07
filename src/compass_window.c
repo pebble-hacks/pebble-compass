@@ -254,6 +254,7 @@ void handle_data_provider_update(DataProvider *provider, void* user_data) {
 
         if(!data_provider_compass_needs_calibration(provider)) {
             window_stack_pop(true);
+            vibes_long_pulse();
         }
     } else {
         compass_layer_update_layout(data);

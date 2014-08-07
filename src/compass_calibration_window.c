@@ -10,9 +10,11 @@ typedef struct {
 
 typedef struct {
     Layer *indicator_layer;
+    TextLayer *headline_layer;
+    TextLayer *description_layer;
     uint8_t segment_value[CALIBRATION_NUM_SEGMENTS];
     int32_t current_angle;
-    CompassCalibrationWindowHelperPoint *helperPoints;
+    CompassCalibrationWindowHelperPoint *helper_points;
 } CompassCalibrationWindowData;
 
 typedef CompassCalibrationWindowData* CompassCalibrationWindowDataPtr;
@@ -64,7 +66,7 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
 
     const GPoint c = grect_center_point(&rect);
 
-    CompassCalibrationWindowHelperPoint *points = data->helperPoints;
+    CompassCalibrationWindowHelperPoint *points = data->helper_points;
 
     for(int s = 0; s<CALIBRATION_NUM_SEGMENTS; s++) {
         int angle = (int) ((s-0.5)* TRIG_MAX_ANGLE / CALIBRATION_NUM_SEGMENTS);
@@ -86,10 +88,10 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
         const int s2 = (s+1)%CALIBRATION_NUM_SEGMENTS;
         const uint8_t segment_value = data->segment_value[s];
         const uint8_t next_segment_value = data->segment_value[s2];
-        const bool segment_visited = segment_value > CALIBRATION_THRESHOLD_VISITED;
-        const bool next_segment_visited = next_segment_value > CALIBRATION_THRESHOLD_VISITED;
-        const bool segment_filled = segment_value > CALIBRATION_THRESHOLD_FILLED;
-        const bool segment_mid = segment_value > CALIBRATION_THRESHOLD_MID;
+        const bool segment_visited = segment_value >= CALIBRATION_THRESHOLD_VISITED;
+        const bool next_segment_visited = next_segment_value >= CALIBRATION_THRESHOLD_VISITED;
+        const bool segment_filled = segment_value >= CALIBRATION_THRESHOLD_FILLED;
+        const bool segment_mid = segment_value >= CALIBRATION_THRESHOLD_MID;
     
         graphics_draw_line(ctx, points[s].inner, points[s2].inner);
         if(segment_visited){
@@ -114,6 +116,23 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
 
 }
 
+TextLayer * create_and_add_text_layer(Layer *window_layer, GRect *all_text_rect, GAlign alignment, char *font_key, char *text) {
+    const GFont font = fonts_get_system_font(font_key);
+    const GTextAlignment text_alignment = GTextAlignmentCenter;
+
+    GRect label_rect = (GRect){.size = graphics_text_layout_get_content_size(text, font, *all_text_rect, GTextOverflowModeWordWrap, text_alignment)};
+    grect_align(&label_rect, all_text_rect, alignment, true);
+
+    TextLayer *layer = text_layer_create(label_rect);
+    text_layer_set_text(layer, text);
+    text_layer_set_background_color(layer, GColorClear);
+    text_layer_set_text_color(layer, CalibrationWindowForegroundColor);
+    text_layer_set_font(layer, font);
+    text_layer_set_text_alignment(layer, text_alignment);
+    layer_add_child(window_layer, text_layer_get_layer(layer));
+    return layer;
+}
+
 static void window_load(Window *window) {
     CompassCalibrationWindowData *data = window_get_user_data(window);
     struct Layer *window_layer = window_get_root_layer(window);
@@ -122,17 +141,31 @@ static void window_load(Window *window) {
     frame = grect_crop(frame, 0);
     data->indicator_layer = layer_create_with_data(frame, sizeof(CompassCalibrationWindowDataPtr));
     data->current_angle = 20 * TRIG_MAX_ANGLE / 360;
-    data->helperPoints = malloc(sizeof(CompassCalibrationWindowHelperPoint) * CALIBRATION_NUM_SEGMENTS);
+    data->helper_points = malloc(sizeof(CompassCalibrationWindowHelperPoint) * CALIBRATION_NUM_SEGMENTS);
     *(CompassCalibrationWindowDataPtr*)layer_get_data(data->indicator_layer) = data;
     layer_set_update_proc(data->indicator_layer, draw_indicator);
     layer_add_child(window_layer, data->indicator_layer);
+
+    GRect all_text_rect = (GRect){.size = GSize(100, 55)};
+    grect_align(&all_text_rect, &frame, GAlignCenter, true);
+    data->headline_layer = create_and_add_text_layer(window_layer, &all_text_rect, GAlignTop, FONT_KEY_GOTHIC_18_BOLD, "Calibration");
+    data->description_layer = create_and_add_text_layer(window_layer, &all_text_rect, GAlignBottom, FONT_KEY_GOTHIC_18, "Tilt Pebble to\nroll ball around");
 }
 
 static void window_unload(Window *window) {
     CompassCalibrationWindowData *data = window_get_user_data(window);
     layer_destroy(data->indicator_layer);
-    free(data->helperPoints);
+    text_layer_destroy(data->headline_layer);
+    text_layer_destroy(data->description_layer);
+
+    free(data->helper_points);
     memset(data, 0, sizeof(CompassCalibrationWindowData));
+}
+
+void fill_fake_data(CompassCalibrationWindowData *data) {
+    data->segment_value[13] = CALIBRATION_THRESHOLD_VISITED;
+    data->segment_value[14] = CALIBRATION_THRESHOLD_MID;
+    data->segment_value[15] = CALIBRATION_THRESHOLD_FILLED;
 }
 
 CompassCalibrationWindow *compass_calibration_window_create() {
@@ -141,6 +174,8 @@ CompassCalibrationWindow *compass_calibration_window_create() {
 
     CompassCalibrationWindowData *data = malloc(sizeof(CompassCalibrationWindowData));
     memset(data, 0, sizeof(CompassCalibrationWindowData));
+    fill_fake_data(data);
+
     window_set_user_data(window, data);
 
     window_set_window_handlers(window, (WindowHandlers){

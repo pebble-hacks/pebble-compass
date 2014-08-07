@@ -47,7 +47,7 @@ void update_description_if_neeed(CompassCalibrationWindowData *data) {// update 
 
     if(all_fully_filled) {
         text_layer_set_text(data->headline_layer, "More!");
-        text_layer_set_text(data->description_layer, "Try some fancy dance?");
+        text_layer_set_text(data->description_layer, "Try a fancy dance?");
     } else {
         // all segments have been visited, encourage user to tilt more!
         text_layer_set_text(data->headline_layer, "Tilt more!");

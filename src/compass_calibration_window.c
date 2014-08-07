@@ -21,6 +21,9 @@ static const int CALIBRATION_THRESHOLD_VISITED = 10;
 static const int CALIBRATION_THRESHOLD_MID = 100;
 static const int CALIBRATION_THRESHOLD_FILLED = 150;
 
+static const enum GColor CalibrationWindowForegroundColor = GColorWhite;
+static const enum GColor CalibrationWindowBackgroundColor = GColorBlack;
+
 #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
 
 void compass_calibration_window_set_current_angle(CompassCalibrationWindow *window, int32_t angle) {
@@ -76,8 +79,8 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
     };
     GPath *path = gpath_create(&path_info);
 
-    graphics_context_set_stroke_color(ctx, GColorBlack);
-    graphics_context_set_fill_color(ctx, GColorBlack);
+    graphics_context_set_stroke_color(ctx, CalibrationWindowForegroundColor);
+    graphics_context_set_fill_color(ctx, CalibrationWindowForegroundColor);
 
     for(int s = 0; s<CALIBRATION_NUM_SEGMENTS; s++) {
         const int s2 = (s+1)%CALIBRATION_NUM_SEGMENTS;
@@ -105,14 +108,7 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
     }
 
     // draw current angle
-    const int16_t arrow_outer_radius = (int16_t) (inner_radius - 4);
-    const int16_t arrow_inner_radius = (int16_t) (inner_radius - 14);
-    const int arrow_angle_delta = TRIG_MAX_ANGLE * 6 / 360;
-    path_info.points[0] = point_at_angle(c, data->current_angle, arrow_outer_radius);
-    path_info.points[1] = point_at_angle(c, data->current_angle+arrow_angle_delta, arrow_inner_radius);
-    path_info.points[2] = point_at_angle(c, data->current_angle-arrow_angle_delta, arrow_inner_radius);
-    path_info.points[3] = path_info.points[2]; //changing path_info.num_points = 3; after init, does not work...
-    gpath_draw_filled(ctx, path);
+    graphics_fill_circle(ctx, point_at_angle(c, data->current_angle, (int16_t)(inner_radius - 6)), 4);
 
     gpath_destroy(path);
 
@@ -123,7 +119,7 @@ static void window_load(Window *window) {
     struct Layer *window_layer = window_get_root_layer(window);
 
     GRect frame = layer_get_bounds(window_layer);
-    frame = grect_crop(frame, 3);
+    frame = grect_crop(frame, 0);
     data->indicator_layer = layer_create_with_data(frame, sizeof(CompassCalibrationWindowDataPtr));
     data->current_angle = 20 * TRIG_MAX_ANGLE / 360;
     data->helperPoints = malloc(sizeof(CompassCalibrationWindowHelperPoint) * CALIBRATION_NUM_SEGMENTS);
@@ -141,6 +137,7 @@ static void window_unload(Window *window) {
 
 CompassCalibrationWindow *compass_calibration_window_create() {
     Window *window = window_create();
+    window_set_background_color(window, CalibrationWindowBackgroundColor);
 
     CompassCalibrationWindowData *data = malloc(sizeof(CompassCalibrationWindowData));
     memset(data, 0, sizeof(CompassCalibrationWindowData));

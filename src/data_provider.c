@@ -23,9 +23,8 @@ typedef struct {
     CompassHeadingData heading;
 } DataProviderState;
 
-// TODO: get rid of me
+// TODO: get rid of me, unfortunately, compass api does not support a context object
 DataProviderState* dataProviderStateSingleton;
-
 
 static void schedule_update(DataProviderState *state);
 
@@ -55,11 +54,15 @@ static void update_state(DataProviderState *state) {
 
     call_handler_if_set(state, state->handlers.presented_angle_or_accel_data_changed);
     state->timer = NULL;
-//    if((int32_t)(attraction*state->friction) != 0 || state->angular_velocity != 0) {
-        schedule_update(state);
-//    } else {
-//        APP_LOG(APP_LOG_LEVEL_DEBUG, "NeedleLayer rested");
-//    }
+    schedule_update(state);
+
+    // once could optimize this and stop the updates once,
+    //
+    //    (int32_t)(attraction*state->friction) != 0 || state->angular_velocity != 0
+    //
+    // but in reality the compass input constantly changes
+    // to simplify dependent code (e.g. for transitions that require constant redraws)
+    // we simply loop infinitely
 }
 
 int32_t data_provider_get_presentation_angle(DataProvider *provider) {
@@ -194,7 +197,6 @@ static void merge_accel_data(AccelData *dest, AccelData *next, float factor) {
 }
 
 static void data_provider_handle_accel_data(AccelData *data, uint32_t num_samples) {
-//    APP_LOG(APP_LOG_LEVEL_DEBUG, "data_provider_handle_accel_data");
     DataProviderState *state = dataProviderStateSingleton;
 
     merge_accel_data(&state->last_accel_data, data, 0.99);
@@ -222,20 +224,10 @@ AccelData data_provider_get_damped_accel_data(DataProvider *provider) {
 bool data_provider_compass_needs_calibration(DataProvider *provider) {
     DataProviderState *state = dataProviderStateSingleton;
 
-//        static int t;
-//        t++;
-//        if(t % 20 == 0) {
-//            APP_LOG(APP_LOG_LEVEL_DEBUG, "compass status: %d", state->heading.compass_status);
-//        }
-
-
     return state->heading.compass_status == CompassStatusDataInvalid;
 }
 
 static void data_provider_handle_compass_data(CompassHeadingData heading) {
-
-//    APP_LOG(APP_LOG_LEVEL_DEBUG, "data_provider_handle_compass_data");
-
     DataProviderState *state = dataProviderStateSingleton;
 
     state->heading = heading;
@@ -280,4 +272,9 @@ void data_provider_destroy(DataProvider *provider) {
     compass_service_unsubscribe();
 
     free(provider);
+
+    // singletons suck!
+    if(dataProviderStateSingleton == state) {
+        dataProviderStateSingleton = NULL;
+    }
 }

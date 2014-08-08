@@ -10,7 +10,6 @@
 		10BCE25C2972446D9B1067ED /* ticks_layer.c in Sources */ = {isa = PBXBuildFile; fileRef = C04D20D2F4EC49FD8C3656B0 /* ticks_layer.c */; };
 		348D35C6DA024DAAA91F35BF /* data_provider.c in Sources */ = {isa = PBXBuildFile; fileRef = B1C60FB6BDF14E6EB665112C /* data_provider.c */; };
 		659F1215FA8B4941BD9CDEBE /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 09655EC5EFB4429E8BD111A6 /* Foundation.framework */; };
-		7A9E5AA11C1D4195893BB797 /* needle_layer.c in Sources */ = {isa = PBXBuildFile; fileRef = 268D161C843D4071AD67C4B6 /* needle_layer.c */; };
 		A4B584C852184504ADA49D48 /* compass_window.c in Sources */ = {isa = PBXBuildFile; fileRef = ADB2A6EE340241B9A8E293EA /* compass_window.c */; };
 		B27CF7521DA04132B83329CC /* inverted_cross_hair_layer.c in Sources */ = {isa = PBXBuildFile; fileRef = 528BFF1E7A6F401CA7C872DA /* inverted_cross_hair_layer.c */; };
 		F26B030E30C6C2E6E5A8CAF4 /* compass_calibration_window.c in Sources */ = {isa = PBXBuildFile; fileRef = F26B0D4A4E5971313622CFAA /* compass_calibration_window.c */; };
@@ -19,13 +18,11 @@
 
 /* Begin PBXFileReference section */
 		09655EC5EFB4429E8BD111A6 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
-		268D161C843D4071AD67C4B6 /* needle_layer.c */ = {isa = PBXFileReference; includeInIndex = 1; path = needle_layer.c; sourceTree = "<group>"; };
 		46130A3C79F04B5AABE32463 /* compass_window.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = compass_window.h; sourceTree = "<group>"; };
 		528BFF1E7A6F401CA7C872DA /* inverted_cross_hair_layer.c */ = {isa = PBXFileReference; includeInIndex = 1; path = inverted_cross_hair_layer.c; sourceTree = "<group>"; };
 		7DDBD16ABB0E42B3A9697860 /* resources */ = {isa = PBXFileReference; includeInIndex = 1; path = resources; sourceTree = "<group>"; };
 		81126E38DEA44885AA9036E7 /* data_provider.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = data_provider.h; sourceTree = "<group>"; };
 		8ED31CB86A4D4710808DE55E /* fake-iOS-target.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "fake-iOS-target.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		9818BABD55B54F0682CC3AEE /* needle_layer.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = needle_layer.h; sourceTree = "<group>"; };
 		9A6FEAE5B1C244A891B53B24 /* compass.c */ = {isa = PBXFileReference; includeInIndex = 1; path = compass.c; sourceTree = "<group>"; };
 		ADB2A6EE340241B9A8E293EA /* compass_window.c */ = {isa = PBXFileReference; includeInIndex = 1; path = compass_window.c; sourceTree = "<group>"; };
 		B1C60FB6BDF14E6EB665112C /* data_provider.c */ = {isa = PBXFileReference; includeInIndex = 1; path = data_provider.c; sourceTree = "<group>"; };
@@ -64,12 +61,10 @@
 				ADB2A6EE340241B9A8E293EA /* compass_window.c */,
 				B1C60FB6BDF14E6EB665112C /* data_provider.c */,
 				528BFF1E7A6F401CA7C872DA /* inverted_cross_hair_layer.c */,
-				268D161C843D4071AD67C4B6 /* needle_layer.c */,
 				C04D20D2F4EC49FD8C3656B0 /* ticks_layer.c */,
 				46130A3C79F04B5AABE32463 /* compass_window.h */,
 				81126E38DEA44885AA9036E7 /* data_provider.h */,
 				E3663EE5B5274FAF938ACEA3 /* inverted_cross_hair_layer.h */,
-				9818BABD55B54F0682CC3AEE /* needle_layer.h */,
 				EA6B93A3196748638C0EC5EA /* ticks_layer.h */,
 				F26B0D4A4E5971313622CFAA /* compass_calibration_window.c */,
 				F26B0BA049AD021E5A0A2FAA /* compass_calibration_window.h */,
@@ -159,7 +154,6 @@
 				A4B584C852184504ADA49D48 /* compass_window.c in Sources */,
 				348D35C6DA024DAAA91F35BF /* data_provider.c in Sources */,
 				B27CF7521DA04132B83329CC /* inverted_cross_hair_layer.c in Sources */,
-				7A9E5AA11C1D4195893BB797 /* needle_layer.c in Sources */,
 				10BCE25C2972446D9B1067ED /* ticks_layer.c in Sources */,
 				F26B030E30C6C2E6E5A8CAF4 /* compass_calibration_window.c in Sources */,
 			);

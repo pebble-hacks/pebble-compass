@@ -4,51 +4,46 @@
 #include "inverted_cross_hair_layer.h"
 #include "compass_calibration_window.h"
 
+
+// window smoothly blends between to modes: "rose"(0.0f) and "band" (1.0f)
+// it adjusts various coordinates in compass_layer_update_layout()
+
 typedef struct {
-    bool window_appeared;
+    // direction string "N", "NE", ...
     GRect direction_layer_rect_rose;
     GRect direction_layer_rect_band;
     TextLayer *direction_layer;
 
+    // current angle
     GRect angle_layer_rect_rose;
     GRect angle_layer_rect_band;
     TextLayer *angle_layer;
 
-    TicksLayer *ticks_layer;
-
+    // will render as ticks and indicator for "rose" or "band"
     GRect pointer_layer_rect_rose;
     GRect pointer_layer_rect_band;
+    TicksLayer *ticks_layer;
     InverterLayer *pointer_layer;
 
-    TextLayer *accel_layer;
 
     DataProvider* data_provider;
 
-    bool shows_band;
     Animation *transition_animation;
     float transition_animation_start_value;
 
-    int64_t last_update_layout;
-
+    // background for level indicator
     BitmapLayer *large_cross_hair_layer;
+    // current level (boy, if we just had an "invert" composition mode)
     InvertedCrossHairLayer *small_cross_hair_layer;
-    MagData data;
 
+    // will be created on demand
+    bool window_appeared;
     CompassCalibrationWindow *calibration_window;
 } CompassWindowData;
-
-int64_t time_64() {
-    time_t s;
-    uint16_t ms;
-    time_ms(&s, &ms);
-    return (int64_t)s * 1000 + ms;
-}
 
 Window *compass_window_get_window(CompassWindow *window) {
     return (Window *)window;
 }
-
-static void compass_layer_update_layout(CompassWindowData *data);
 
 static GSize size_blend(GSize s1, GSize s2, float f) {
     return (GSize){
@@ -67,7 +62,7 @@ static GRect rect_blend(GRect *r1, GRect *r2, float f) {
     };
 }
 
-static GRect rect_centered_with_size(GRect *r1, GSize size, GPoint offset) {
+static GRect rect_centered_with_size_and_offset(GRect *r1, GSize size, GPoint offset) {
     return (GRect){
             .origin = {
                     (int16_t) ((r1->size.w - size.w) / 2 + r1->origin.x + offset.x),
@@ -78,7 +73,6 @@ static GRect rect_centered_with_size(GRect *r1, GSize size, GPoint offset) {
 }
 
 static void compass_layer_update_layout(CompassWindowData *data) {
-    data->last_update_layout = time_64();
     int32_t angle = data_provider_get_presentation_angle(data->data_provider);
     ticks_layer_set_angle(data->ticks_layer, angle);
 
@@ -91,24 +85,18 @@ static void compass_layer_update_layout(CompassWindowData *data) {
     text_layer_set_text(data->angle_layer, angle_text);
     GRect r = rect_blend(&data->angle_layer_rect_rose, &data->angle_layer_rect_band, transition_factor);
     layer_set_frame(text_layer_get_layer(data->angle_layer), r);
-    // workound!
+    // workaround!
     // TODO: file a bug for tintin applib
     layer_set_bounds(text_layer_get_layer(data->angle_layer), (GRect){.size=r.size});
     text_layer_set_text_alignment(data->angle_layer, GTextAlignmentRight);
 
     static char *direction_texts[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
     int32_t direction_index = ((normalized_angle + 23) / (360 / ARRAY_LENGTH(direction_texts))) % ARRAY_LENGTH(direction_texts);
-//    int32_t direction_index = 1;
     text_layer_set_text(data->direction_layer, direction_texts[direction_index]);
     layer_set_frame(text_layer_get_layer(data->direction_layer), rect_blend(&data->direction_layer_rect_rose, &data->direction_layer_rect_band, transition_factor));
 
     layer_set_frame(inverter_layer_get_layer(data->pointer_layer), rect_blend(&data->pointer_layer_rect_rose, &data->pointer_layer_rect_band, transition_factor));
 
-    static char accel_text[40];
-    AccelData ad = data_provider_last_accel_data(data->data_provider);
-    snprintf(accel_text, sizeof(accel_text), "x:%d y:%d z:%d", (int)ad.x, (int)ad.y, (int)ad.z);
-//    APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", accel_text);
-    text_layer_set_text(data->accel_layer, accel_text);
 
     GRect frame = layer_get_frame(ticks_layer_get_layer(data->ticks_layer));
     const GBitmap *bmp = bitmap_layer_get_bitmap(data->large_cross_hair_layer);
@@ -117,9 +105,10 @@ static void compass_layer_update_layout(CompassWindowData *data) {
     int16_t transition_dy = (int16_t) (transition_factor * frame.size.h);
 
     layer_set_frame(bitmap_layer_get_layer(data->large_cross_hair_layer),
-            rect_centered_with_size(&frame, bmp->bounds.size, GPoint(1,transition_dy)));
+            rect_centered_with_size_and_offset(&frame, bmp->bounds.size, GPoint(1, transition_dy)));
 
     int16_t d = 40;   // TODO: get rid of magic number
+    AccelData ad = data_provider_last_accel_data(data->data_provider);
     GPoint small_cross_hair_offset = GPoint((int16_t)(1 - ad.x / d), ad.y / d);
     // make small cross hair stick to center during transition until almost back to polar representation
     float tf2 = (1-transition_factor) * (1-transition_factor);
@@ -129,11 +118,12 @@ static void compass_layer_update_layout(CompassWindowData *data) {
     small_cross_hair_offset.y += transition_dy;
 
     layer_set_frame(inverted_cross_hair_layer_get_layer(data->small_cross_hair_layer),
-            rect_centered_with_size(&frame, GSize(17, 17), small_cross_hair_offset));
+            rect_centered_with_size_and_offset(&frame, GSize(17, 17), small_cross_hair_offset));
 }
 
 static void compass_window_load(Window *window) {
     // TODO: get rid of absolute coordinates
+    // one day... I hope... we will have an interface builder... and transitioning by the firmware...
     CompassWindowData *data = window_get_user_data(window);
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
@@ -175,11 +165,8 @@ static void compass_window_load(Window *window) {
     data->pointer_layer = inverter_layer_create(data->pointer_layer_rect_rose);
     layer_add_child(window_layer, inverter_layer_get_layer(data->pointer_layer));
 
-
-    data->accel_layer = text_layer_create((GRect){{0,40},{144, 20}});
     text_layer_set_text_color(data->angle_layer, GColorWhite);
     text_layer_set_background_color(data->angle_layer, GColorClear);
-//    layer_add_child(window_layer, text_layer_get_layer(data->accel_layer));
 
     GBitmap *bmp = gbitmap_create_with_resource(RESOURCE_ID_CROSS_HAIR_LARGE);
     data->large_cross_hair_layer = bitmap_layer_create(GRectZero);
@@ -193,6 +180,7 @@ static void compass_window_load(Window *window) {
 }
 
 static void compass_window_appear(Window *window) {
+    // needed to prevent calibration window to appear before the compass was presented
     CompassWindowData *data = window_get_user_data(window);
     data->window_appeared = true;
 }
@@ -203,7 +191,6 @@ static void compass_window_unload(Window *window) {
     text_layer_destroy(data->angle_layer);
     text_layer_destroy(data->direction_layer);
     inverter_layer_destroy(data->pointer_layer);
-    text_layer_destroy(data->accel_layer);
     inverted_cross_hair_layer_destroy(data->small_cross_hair_layer);
 
     gbitmap_destroy((GBitmap *)bitmap_layer_get_bitmap(data->large_cross_hair_layer));
@@ -211,6 +198,8 @@ static void compass_window_unload(Window *window) {
 }
 
 static void handle_data_provider_update(DataProvider *provider, void* user_data) {
+    // switch between calibration window and actual compass
+
     CompassWindowData *data = user_data;
     if(data->calibration_window && window_stack_get_top_window() == compass_calibration_window_get_window(data->calibration_window)){
         AccelData accel_data = data_provider_get_damped_accel_data(provider);

@@ -11,6 +11,9 @@ Layer *inverted_cross_hair_layer_get_layer(InvertedCrossHairLayer* layer) {
 }
 
 static void inverted_cross_hair_update_proc(Layer *layer, GContext *ctx) {
+    // I wish we had an inverted compositing Op for bitmaps...
+    // we wouldn't need this layer at all...
+
     InvertedCrossHairLayerData *data = layer_get_data(layer);
     GRect b = layer_get_bounds(layer);
 

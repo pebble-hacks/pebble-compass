@@ -1,5 +1,7 @@
 # Pebble Compass
 
+![Pebble appstore banner](media/compass.png)
+
 Shows a white compass rose on black background, a level indicator and two text layers showing the current heading angle in degrees and as short direction text, e.g. "N" or "NE".
 It smoothly transitions to a second representation as band if you hold your watch upright.
 Also, the compass value fakes a physical model with friction and inertia.
@@ -20,6 +22,6 @@ Also, the compass value fakes a physical model with friction and inertia.
 	- has no real knowledge over the compass calibration
 	- has a super simple API and should be shared with other developers to do calibration
 	
-- 'ticks_layer.{h,c}`, renders the actual compass rose/band
-- 'inverted_cross_hair_layer.{h,c}`, needed to draw the cross-hair with public API (this is sad, see comments in the code)
+- `ticks_layer.{h,c}`, renders the actual compass rose/band
+- `inverted_cross_hair_layer.{h,c}`, needed to draw the cross-hair with public API (this is sad, see comments in the code)
 	

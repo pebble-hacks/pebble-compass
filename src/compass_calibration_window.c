@@ -3,18 +3,15 @@
 #define CALIBRATION_NUM_SEGMENTS 80
 
 typedef struct {
-        GPoint inner;
-        GPoint mid;
-        GPoint outer;
-} CompassCalibrationWindowHelperPoint;
-
-typedef struct {
+    // actual ring, custom update_proc
     Layer *indicator_layer;
+
     TextLayer *headline_layer;
     TextLayer *description_layer;
+
+    // internal state
     uint8_t segment_value[CALIBRATION_NUM_SEGMENTS];
     int32_t current_angle;
-    CompassCalibrationWindowHelperPoint *helper_points;
 } CompassCalibrationWindowData;
 
 typedef CompassCalibrationWindowData* CompassCalibrationWindowDataPtr;
@@ -22,6 +19,8 @@ typedef CompassCalibrationWindowData* CompassCalibrationWindowDataPtr;
 static const int CALIBRATION_THRESHOLD_VISITED = 10;
 static const int CALIBRATION_THRESHOLD_MID = 100;
 static const int CALIBRATION_THRESHOLD_FILLED = 150;
+
+static const int CALIBRATION_WINDOW_RING_MARGIN = 0;
 
 static const enum GColor CalibrationWindowForegroundColor = GColorWhite;
 static const enum GColor CalibrationWindowBackgroundColor = GColorBlack;
@@ -88,6 +87,9 @@ static GPoint point_at_angle(GPoint center, int angle, int16_t radius) {
 static void draw_indicator(Layer *layer, GContext* ctx) {
     CompassCalibrationWindowData *data = *(CompassCalibrationWindowDataPtr*)layer_get_data(layer);
 
+    // as we don't have a graphics_fill_ring_segment() we fake a circle here
+    // in reality we are painting and filling a regular polygon
+
     const GRect rect = layer_get_bounds(layer);
     const uint16_t ring_thickness = 10;
     const uint16_t outer_radius = (uint16_t)(MIN(rect.size.h, rect.size.w) / 2);
@@ -96,15 +98,23 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
 
     const GPoint c = grect_center_point(&rect);
 
-    CompassCalibrationWindowHelperPoint *points = data->helper_points;
+    // helper points for rendering below
+    typedef struct {
+        GPoint inner;
+        GPoint mid;
+        GPoint outer;
+    } CompassCalibrationWindowHelperPoint;
 
+    CompassCalibrationWindowHelperPoint *points = malloc(sizeof(CompassCalibrationWindowHelperPoint) * CALIBRATION_NUM_SEGMENTS);
     for(int s = 0; s<CALIBRATION_NUM_SEGMENTS; s++) {
-        int angle = (int) ((s-0.5)* TRIG_MAX_ANGLE / CALIBRATION_NUM_SEGMENTS);
+        // (s-0.5) * 360 / num_segments
+        int angle = (s*TRIG_MAX_ANGLE - TRIG_MAX_ANGLE/2)/ CALIBRATION_NUM_SEGMENTS;
         points[s].inner = point_at_angle(c, angle, inner_radius);
         points[s].mid = point_at_angle(c, angle, mid_radius);
         points[s].outer = point_at_angle(c, angle, outer_radius);
     }
 
+    // we create a gpath only once and modify it one the fly
     GPathInfo path_info = (GPathInfo){
             .num_points = 4,
             .points = (GPoint[4]){},
@@ -114,6 +124,7 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
     graphics_context_set_stroke_color(ctx, CalibrationWindowForegroundColor);
     graphics_context_set_fill_color(ctx, CalibrationWindowForegroundColor);
 
+    // go around the ring and draw elements as needed
     for(int s = 0; s<CALIBRATION_NUM_SEGMENTS; s++) {
         const int s2 = (s+1)%CALIBRATION_NUM_SEGMENTS;
         const uint8_t segment_value = data->segment_value[s];
@@ -134,6 +145,8 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
             path_info.points[0] = points[s].inner;
             path_info.points[1] = segment_filled ? points[s].outer : points[s].mid;
             path_info.points[2] = segment_filled ? points[s2].outer : points[s2].mid;
+            // gpath_draw_filled does not support chaning .num_points after gpath has been created
+            // hence, put 4th point into 3rd
             path_info.points[3] = points[s2].inner;
             gpath_draw_filled(ctx, path);
         }
@@ -143,7 +156,7 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
     graphics_fill_circle(ctx, point_at_angle(c, data->current_angle, (int16_t)(inner_radius - 6)), 4);
 
     gpath_destroy(path);
-
+    free(points);
 }
 
 TextLayer * create_and_add_text_layer(Layer *window_layer, GRect *all_text_rect, GAlign alignment, char *font_key, char *text) {
@@ -151,7 +164,8 @@ TextLayer * create_and_add_text_layer(Layer *window_layer, GRect *all_text_rect,
     const GTextAlignment text_alignment = GTextAlignmentCenter;
 
     GRect label_rect = (GRect){.size = graphics_text_layout_get_content_size(text, font, *all_text_rect, GTextOverflowModeWordWrap, text_alignment)};
-    label_rect.size.h += 5; // everything below baseline...
+    // graphics_text_layout_get_content_size does not care about anything below baseline :(
+    label_rect.size.h += 5;
     grect_align(&label_rect, all_text_rect, alignment, true);
 
     TextLayer *layer = text_layer_create(label_rect);
@@ -169,14 +183,18 @@ static void window_load(Window *window) {
     struct Layer *window_layer = window_get_root_layer(window);
 
     GRect frame = layer_get_bounds(window_layer);
-    frame = grect_crop(frame, 0);
+    frame = grect_crop(frame, CALIBRATION_WINDOW_RING_MARGIN);
     data->indicator_layer = layer_create_with_data(frame, sizeof(CompassCalibrationWindowDataPtr));
     data->current_angle = 20 * TRIG_MAX_ANGLE / 360;
-    data->helper_points = malloc(sizeof(CompassCalibrationWindowHelperPoint) * CALIBRATION_NUM_SEGMENTS);
+    // unfortunately, once cannot pass a pointer to your own data in layer_create_with_data
+    // hence, we interpret the allocated space as pointer to pointer...
     *(CompassCalibrationWindowDataPtr*)layer_get_data(data->indicator_layer) = data;
     layer_set_update_proc(data->indicator_layer, draw_indicator);
     layer_add_child(window_layer, data->indicator_layer);
 
+    // TODO: get rid of absolute coordinates
+    // note, as there's not way to detect bounds changes of a layer, one has to do this during update
+    // or here, assuming the size of a window won't change
     GRect all_text_rect = (GRect){.size = GSize(100, 60)};
     grect_align(&all_text_rect, &frame, GAlignCenter, true);
     data->headline_layer = create_and_add_text_layer(window_layer, &all_text_rect, GAlignTop, FONT_KEY_GOTHIC_18_BOLD, "Calibration");
@@ -188,13 +206,11 @@ static void window_unload(Window *window) {
     layer_destroy(data->indicator_layer);
     text_layer_destroy(data->headline_layer);
     text_layer_destroy(data->description_layer);
-
-    free(data->helper_points);
     memset(data, 0, sizeof(CompassCalibrationWindowData));
 }
 
 static void fill_fake_data(CompassCalibrationWindowData *data) {
-    int b = (int) (CALIBRATION_NUM_SEGMENTS * 0.6);
+    int b = CALIBRATION_NUM_SEGMENTS * 6 / 10;
     data->segment_value[b+0] = CALIBRATION_THRESHOLD_VISITED;
     data->segment_value[b+1] = CALIBRATION_THRESHOLD_MID;
     data->segment_value[b+2] = CALIBRATION_THRESHOLD_FILLED;

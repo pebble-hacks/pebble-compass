@@ -21,6 +21,9 @@ static TicksLayerData *ticks_layer_get_ticks_data(TicksLayer *layer) {
 }
 
 static GPoint point_from_center(TicksLayer* layer, int32_t angle, int32_t radius) {
+    // this is the heart of the smooth transition
+    // it calculates two coordinates "rose" (polar) and "band" cartesian to blend between them
+
     const GRect bounds = layer_get_bounds(ticks_layer_get_layer(layer));
     const GPoint center = grect_center_point(&bounds);
     const TicksLayerData *data = ticks_layer_get_ticks_data(layer);
@@ -80,17 +83,9 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_fill_color(ctx, GColorWhite);
     graphics_context_set_text_color(ctx, GColorWhite);
 
-    // TODO: put GPaths into structure to avoid repetitive malloc
-
     // draw ticks
     {
         const int num_ticks = 32;
-
-        GPathInfo points = {
-                4,
-                (GPoint[4]) {},
-        };
-        GPath *path = gpath_create(&points);
 
         for (int i = 0; i < num_ticks; i++) {
             int32_t angle = (int32_t) (TRIG_MAX_ANGLE * i / num_ticks);
@@ -102,8 +97,6 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
 
             graphics_draw_line(ctx, inner, outer);
         }
-
-        gpath_destroy(path);
     }
 
     // draw north (can be omitted if fully transitioned to cartesian representation)
@@ -121,9 +114,7 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
                 },
         };
         GPath *path = gpath_create(&points);
-
         gpath_draw_filled(ctx, path);
-
         gpath_destroy(path);
     }
 
@@ -147,7 +138,7 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
 //                {"SW",TRIG_MAX_ANGLE * 5 / 8, font_small},
                 {"W", TRIG_MAX_ANGLE * 6 / 8, font_large},
 //                {"NW",TRIG_MAX_ANGLE * 7 / 8, font_small},
-        };
+        }
 
         {
             int32_t margin_letter = 19;

@@ -5,6 +5,7 @@ typedef struct {
     int32_t target_angle;
     int32_t angular_velocity;
     int32_t presentation_angle;
+    int32_t compass_delta_angle;
     float friction;
     float attraction;
     AppTimer *timer;
@@ -39,9 +40,18 @@ static void update_state(DataProviderState *state) {
     int32_t distance = state->target_angle - state->presentation_angle;
     while(distance < -TRIG_MAX_ANGLE/2) distance += TRIG_MAX_ANGLE;
     while(distance > +TRIG_MAX_ANGLE/2) distance -= TRIG_MAX_ANGLE;
-    int32_t attraction = (int32_t)(distance * state->attraction);
+
+    float attraction_factor = state->attraction;
+    if(state->handlers.attraction_modifier) {
+      attraction_factor = state->handlers.attraction_modifier((DataProvider*)state, attraction_factor, state->user_data);
+    }
+    int32_t attraction = (int32_t)(distance * attraction_factor);
     state->angular_velocity += attraction;
-    state->angular_velocity = (int32_t) (state->angular_velocity * state->friction);
+    float friction = state->friction;
+    if(state->handlers.friction_modifier) {
+      friction = state->handlers.friction_modifier((DataProvider*)state, friction, state->user_data);
+    }
+    state->angular_velocity = (int32_t) (state->angular_velocity * friction);
 
     call_handler_if_set(state, state->handlers.presented_angle_or_accel_data_changed);
     state->timer = NULL;
@@ -57,6 +67,12 @@ int32_t data_provider_get_presentation_angle(DataProvider *provider) {
     return state->presentation_angle;
 }
 
+void data_provider_set_presentation_angle(DataProvider *provider, int32_t angle) {
+    DataProviderState *state = (DataProviderState *) provider;
+    state->presentation_angle = angle;
+    state->angular_velocity = 0;
+}
+
 static void schedule_update(DataProviderState *state) {
     if(!state->timer) {
         state->timer = app_timer_register(1000 / 30, (AppTimerCallback) update_state, state);
@@ -70,8 +86,21 @@ int32_t data_provider_get_target_angle(DataProvider *provider) {
 
 void data_provider_set_target_angle(DataProvider *provider, int32_t angle) {
     DataProviderState *state = (DataProviderState *) provider;
+    if(state->handlers.target_angle_modifier) {
+      angle = state->handlers.target_angle_modifier(provider, angle, state->user_data);
+    }
     state->target_angle = angle;
     schedule_update(state);
+}
+
+int32_t data_provider_get_compass_delta_angle(DataProvider *provider) {
+    DataProviderState *state = (DataProviderState *) provider;
+    return state->compass_delta_angle;
+}
+
+void data_provider_set_compass_delta_angle(DataProvider *provider, int32_t angle) {
+    DataProviderState *state = (DataProviderState *) provider;
+    state->compass_delta_angle = angle;
 }
 
 void data_provider_delta_heading_angle(DataProvider *provider, int32_t delta) {
@@ -211,7 +240,7 @@ void data_provider_handle_compass_data(CompassHeadingData heading) {
 
     state->heading = heading;
     // TODO: use true_heading if available
-    state->target_angle = TRIG_MAX_ANGLE-heading.magnetic_heading;
+    data_provider_set_target_angle((DataProvider*)dataProviderStateSingleton, TRIG_MAX_ANGLE-heading.magnetic_heading - state->compass_delta_angle);
     call_handler_if_set(state, state->handlers.input_heading_changed);
 }
 

@@ -3,6 +3,8 @@
 typedef struct DataProvider DataProvider;
 
 typedef void (*DataProviderHandler)(DataProvider *provider, void *user_data);
+typedef int32_t (*DataProviderModifyAngleHandler)(DataProvider *provider, int32_t angle, void *user_data);
+typedef float (*DataProviderModifyFactorHandler)(DataProvider *provider, float factor, void *user_data);
 
 typedef struct {
     DataProviderHandler input_heading_changed;
@@ -11,6 +13,9 @@ typedef struct {
     DataProviderHandler orientation_transition_factor_changed;
     DataProviderHandler input_accel_data_changed;
     DataProviderHandler presented_angle_or_accel_data_changed;
+    DataProviderModifyAngleHandler target_angle_modifier;
+    DataProviderModifyFactorHandler attraction_modifier;
+    DataProviderModifyFactorHandler friction_modifier;
 } DataProviderHandlers;
 
 typedef enum {
@@ -22,9 +27,14 @@ DataProvider *data_provider_create(void *user_data, DataProviderHandlers handler
 void data_provider_destroy(DataProvider *pProvider);
 
 int32_t data_provider_get_presentation_angle(DataProvider *provider);
+void data_provider_set_presentation_angle(DataProvider *provider, int32_t angle);
 
 int32_t data_provider_get_target_angle(DataProvider *provider);
 void data_provider_set_target_angle(DataProvider *provider, int32_t angle);
+
+int32_t data_provider_get_compass_delta_angle(DataProvider *provider);
+void data_provider_set_compass_delta_angle(DataProvider *provider, int32_t angle);
+
 
 void data_provider_delta_heading_angle(DataProvider *provider, int32_t angle);
 

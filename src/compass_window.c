@@ -50,43 +50,14 @@ Window *compass_window_get_window(CompassWindow *window) {
 
 static void compass_layer_update_layout(CompassWindowData *data);
 
-static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-//    needle_layer_set_angle(needle_layer, 0);
-//    ticks_layer_set_transition_factor(ticks_layer, ticks_layer_get_transition_factor(ticks_layer) - 0.1f);
-//    compass_layer_update_layout(needle_layer);
-    CompassWindowData *data = context;
-
-    DataProviderOrientation o = data_provider_get_orientation(data->data_provider) == DataProviderOrientationFlat ? DataProviderOrientationUpright : DataProviderOrientationFlat;
-    data_provider_set_orientation(data->data_provider, o);
-//    data_provider_delta_angle(data->data_provider, (int32_t) (TRIG_MAX_ANGLE * 0.52));
-}
-
-static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-    //needle_layer_set_angle(needle_layer, needle_layer_get_angle(needle_layer) - TRIG_MAX_ANGLE / 10);
-    CompassWindowData *data = context;
-    data_provider_set_orientation_transition_factor(data->data_provider, data_provider_get_orientation_transition_factor(data->data_provider) + 0.1f);
-    compass_layer_update_layout(data);
-}
-
-static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-    CompassWindowData *data = context;
-    data_provider_delta_heading_angle(data->data_provider, TRIG_MAX_ANGLE / 10);
-}
-
-static void click_config_provider(void *context) {
-    window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
-    window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
-    window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
-}
-
-GSize size_blend(GSize s1, GSize s2, float f) {
+static GSize size_blend(GSize s1, GSize s2, float f) {
     return (GSize){
         (int16_t) (s1.w * (1-f) + f * s2.w),
         (int16_t) (s1.h * (1-f) + f * s2.h),
     };
 }
 
-GRect rect_blend(GRect *r1, GRect *r2, float f) {
+static GRect rect_blend(GRect *r1, GRect *r2, float f) {
     return (GRect){
         .origin = {
             (int16_t) (r1->origin.x * (1-f) + f * r2->origin.x),
@@ -96,7 +67,7 @@ GRect rect_blend(GRect *r1, GRect *r2, float f) {
     };
 }
 
-GRect rect_centered_with_size(GRect *r1, GSize size, GPoint offset) {
+static GRect rect_centered_with_size(GRect *r1, GSize size, GPoint offset) {
     return (GRect){
             .origin = {
                     (int16_t) ((r1->size.w - size.w) / 2 + r1->origin.x + offset.x),
@@ -235,14 +206,11 @@ static void compass_window_unload(Window *window) {
 
     gbitmap_destroy((GBitmap *)bitmap_layer_get_bitmap(data->large_cross_hair_layer));
     bitmap_layer_destroy(data->large_cross_hair_layer);
-
 }
 
-void handle_data_provider_update(DataProvider *provider, void* user_data) {
+static void handle_data_provider_update(DataProvider *provider, void* user_data) {
     CompassWindowData *data = user_data;
     if(data->calibration_window && window_stack_get_top_window() == compass_calibration_window_get_window(data->calibration_window)){
-//        AccelData accel_data = data_provider_last_accel_data(provider);
-
         AccelData accel_data = data_provider_get_damped_accel_data(provider);
         compass_calibration_window_apply_accel_data(data->calibration_window, accel_data);
 
@@ -266,14 +234,6 @@ CompassWindow *compass_window_create() {
     Window *window = window_create();
     CompassWindowData *data = malloc(sizeof(CompassWindowData));
 
-
-//    APP_LOG(APP_LOG_LEVEL_DEBUG, "will call compass_start()");
-//    mag_set_corr("00:17:E9:5E:DA:D9", 2628, -2368, -2178);
-//    mag_set_corr("00:17:E9:5E:DA:D9", 2628, -2368, -2178); // Heiko BB2
-//    mag_set_corr("00:17:E9:A6:A3:E8", -736, 363, 1451); // Heiko Black Steel
-
-//    APP_LOG(APP_LOG_LEVEL_DEBUG, "will query orientation");
-
     data->data_provider = data_provider_create(data, (DataProviderHandlers) {
             .presented_angle_or_accel_data_changed = handle_data_provider_update,
             .orientation_transition_factor_changed = handle_data_provider_update,
@@ -286,18 +246,17 @@ CompassWindow *compass_window_create() {
             .unload = compass_window_unload,
             .appear = compass_window_appear,
     });
-    window_set_click_config_provider_with_context(window, click_config_provider, data);
     window_set_background_color(window, GColorBlack);
 
     return (CompassWindow *) window;
 }
 
 void compass_window_destroy(CompassWindow *window) {
+    if(!window)return;
+
     CompassWindowData *data = window_get_user_data((Window *)window);
     data_provider_destroy(data->data_provider);
     compass_calibration_window_destroy(data->calibration_window);
-
-    // TODO: destroy layers
     free(data);
 
     window_destroy((Window *)window);

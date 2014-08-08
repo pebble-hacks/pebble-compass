@@ -53,11 +53,11 @@ static GPoint point_from_center(TicksLayer* layer, int32_t angle, int32_t radius
     };
 }
 
-bool ticks_layer_is_polar(TicksLayer *layer) {
+static bool ticks_layer_is_polar(TicksLayer *layer) {
     return ticks_layer_get_ticks_data(layer)->transition_factor <= 0.01;
 }
 
-int32_t tick_len(TicksLayer *layer, int tick_idx) {
+static int32_t tick_len(TicksLayer *layer, int tick_idx) {
     if(tick_idx == 0) {
         return ticks_layer_is_polar(layer) ? 0 : 10;
     }
@@ -68,7 +68,7 @@ int32_t tick_len(TicksLayer *layer, int tick_idx) {
     }
 }
 
-void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
+static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
     TicksLayer *ticks_layer = (TicksLayer *)layer;
     TicksLayerData *data = layer_get_ticks_data(layer);
     const GRect bounds = layer_get_bounds(layer);

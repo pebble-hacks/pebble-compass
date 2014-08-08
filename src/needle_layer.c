@@ -26,7 +26,7 @@ static NeedleLayerData *needle_layer_get_needle_data(NeedleLayer *layer) {
 }
 
 
-void neddle_layer_update_proc(struct Layer *layer, GContext *ctx) {
+static void neddle_layer_update_proc(struct Layer *layer, GContext *ctx) {
 
     const GRect r = layer_get_bounds(layer);
     const GPoint center = grect_center_point(&r);
@@ -63,7 +63,7 @@ void neddle_layer_update_proc(struct Layer *layer, GContext *ctx) {
 
 void needle_layer_update_state(NeedleLayer *layer);
 
-void needle_layer_data_schedule_update(NeedleLayer *layer) {
+static void needle_layer_data_schedule_update(NeedleLayer *layer) {
     NeedleLayerData *data = needle_layer_get_needle_data(layer);
     if(!data->timer) {
         data->timer = app_timer_register(1000 / 30, (AppTimerCallback) needle_layer_update_state, layer);

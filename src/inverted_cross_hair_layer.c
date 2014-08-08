@@ -10,7 +10,7 @@ Layer *inverted_cross_hair_layer_get_layer(InvertedCrossHairLayer* layer) {
     return (Layer *) layer;
 }
 
-void inverted_cross_hair_update_proc(Layer *layer, GContext *ctx) {
+static void inverted_cross_hair_update_proc(Layer *layer, GContext *ctx) {
     InvertedCrossHairLayerData *data = layer_get_data(layer);
     GRect b = layer_get_bounds(layer);
 

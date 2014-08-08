@@ -5,34 +5,45 @@
 static CompassWindow *compass_window;
 static CompassCalibrationWindow *calibration_window;
 
-//static void fake_calibration_window(void) {
-////    APP_LOG(APP_LOG_LEVEL_DEBUG, "fake_calibration_window");
-//    if(!calibration_window) return;
-//
-//    static int32_t angle;
-//    static uint16_t intensity;
-//    angle += 5+TRIG_MAX_ANGLE / 360;
-//    intensity += 3;
-//
-//    compass_calibration_window_merge_value(calibration_window, angle, (uint8_t) (intensity / 5));
-//    compass_calibration_window_set_current_angle(calibration_window, angle);
-//
-//    app_timer_register(1000/30, (AppTimerCallback) fake_calibration_window, 0);
-//}
+//#define CALIBRATION_FAKE
+
+#ifdef CALIBRATION_FAKE
+
+static void fake_calibration_window(void) {
+    if(!calibration_window) return;
+
+    static int32_t angle;
+    static uint16_t intensity;
+    angle += 5+TRIG_MAX_ANGLE / 360;
+    intensity += 3;
+
+    compass_calibration_window_merge_value(calibration_window, angle, (uint8_t) (intensity / 5));
+    compass_calibration_window_set_current_angle(calibration_window, angle);
+
+    app_timer_register(1000/30, (AppTimerCallback) fake_calibration_window, 0);
+}
+
+#endif
 
 static void init(void) {
+#ifdef CALIBRATION_FAKE
+    calibration_window = compass_calibration_window_create();
+    window_stack_push(compass_calibration_window_get_window(calibration_window), true);
+    fake_calibration_window();
+
+#else
     compass_window = compass_window_create();
 
     window_stack_push(compass_window_get_window(compass_window), true);
-
-//    calibration_window = compass_calibration_window_create();
-//    window_stack_push(compass_calibration_window_get_window(calibration_window), true);
-//    fake_calibration_window();
+#endif
 }
 
 static void deinit(void) {
+#ifdef CALIBRATION_FAKE
+    compass_calibration_window_destroy(calibration_window);
+#else
     compass_window_destroy(compass_window);
-//    compass_calibration_window_destroy(calibration_window);
+#endif
 }
 
 int main(void) {

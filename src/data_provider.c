@@ -125,7 +125,7 @@ float data_provider_get_orientation_transition_factor(DataProvider* provider) {
     return state->orientation_transition_factor;
 }
 
-float CubicEaseInOut(float p)
+static float CubicEaseInOut(float p)
 {
     if(p < 0.5)
     {
@@ -232,7 +232,7 @@ bool data_provider_compass_needs_calibration(DataProvider *provider) {
     return state->heading.compass_status == CompassStatusDataInvalid;
 }
 
-void data_provider_handle_compass_data(CompassHeadingData heading) {
+static void data_provider_handle_compass_data(CompassHeadingData heading) {
 
 //    APP_LOG(APP_LOG_LEVEL_DEBUG, "data_provider_handle_compass_data");
 
@@ -270,6 +270,8 @@ DataProvider *data_provider_create(void *user_data, DataProviderHandlers handler
 }
 
 void data_provider_destroy(DataProvider *provider) {
+    if(!provider)return;
+
     DataProviderState *state = (DataProviderState *)provider;
     if(state->timer) {
         app_timer_cancel(state->timer);

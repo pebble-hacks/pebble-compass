@@ -203,6 +203,8 @@ static void compass_window_unload(Window *window) {
     text_layer_destroy(data->angle_layer);
     text_layer_destroy(data->direction_layer);
     inverter_layer_destroy(data->pointer_layer);
+    text_layer_destroy(data->accel_layer);
+    inverted_cross_hair_layer_destroy(data->small_cross_hair_layer);
 
     gbitmap_destroy((GBitmap *)bitmap_layer_get_bitmap(data->large_cross_hair_layer));
     bitmap_layer_destroy(data->large_cross_hair_layer);

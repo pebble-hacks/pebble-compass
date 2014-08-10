@@ -138,7 +138,7 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
 //                {"SW",TRIG_MAX_ANGLE * 5 / 8, font_small},
                 {"W", TRIG_MAX_ANGLE * 6 / 8, font_large},
 //                {"NW",TRIG_MAX_ANGLE * 7 / 8, font_small},
-        }
+        };
 
         {
             int32_t margin_letter = 19;
@@ -155,7 +155,7 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
                 GRect text_box = (GRect) {{(int16_t) (p.x - size.w / 2), (int16_t) (p.y - size.h / 2 - vertical_text_offset)}, size};
                 graphics_draw_text(ctx, caption, font, text_box, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
             }
-        }
+        };
 
     }
 

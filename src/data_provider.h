@@ -13,6 +13,7 @@ typedef struct {
     DataProviderHandler orientation_transition_factor_changed;
     DataProviderHandler input_accel_data_changed;
     DataProviderHandler presented_angle_or_accel_data_changed;
+    DataProviderHandler magnetic_interference_changed;
     DataProviderModifyAngleHandler target_angle_modifier;
     DataProviderModifyFactorHandler attraction_modifier;
     DataProviderModifyFactorHandler friction_modifier;
@@ -45,6 +46,8 @@ AccelData data_provider_last_accel_data(DataProvider *provider);
 AccelData data_provider_get_damped_accel_data(DataProvider *provider);
 
 bool data_provider_compass_needs_calibration(DataProvider *provider);
+
+bool data_provider_is_influenced_by_magnetic_interference(DataProvider *provider);
 
 // NOTE: for debugging only
 float data_provider_get_orientation_transition_factor(DataProvider* provider);

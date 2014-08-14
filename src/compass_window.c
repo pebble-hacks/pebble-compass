@@ -197,6 +197,13 @@ static void compass_window_unload(Window *window) {
     bitmap_layer_destroy(data->large_cross_hair_layer);
 }
 
+void propagate_interference_to_calibration_window(CompassWindowData *window_data) {
+    if(window_data->calibration_window) {
+        bool influenced = data_provider_is_influenced_by_magnetic_interference(window_data->data_provider);
+        compass_calibration_window_set_influenced_by_magnetic_interferences(window_data->calibration_window, influenced);
+    }
+}
+
 static void handle_data_provider_update(DataProvider *provider, void* user_data) {
     // switch between calibration window and actual compass
 
@@ -216,9 +223,15 @@ static void handle_data_provider_update(DataProvider *provider, void* user_data)
             if(!data->calibration_window) {
                 data->calibration_window = compass_calibration_window_create();
             }
+            propagate_interference_to_calibration_window(data);
             window_stack_push(compass_calibration_window_get_window(data->calibration_window), true);
         }
     }
+}
+
+static void handle_data_provider_interference_update(DataProvider *provider, void* user_data) {
+    CompassWindowData *data = user_data;
+    propagate_interference_to_calibration_window(data);
 }
 
 CompassWindow *compass_window_create() {
@@ -228,6 +241,7 @@ CompassWindow *compass_window_create() {
     data->data_provider = data_provider_create(data, (DataProviderHandlers) {
             .presented_angle_or_accel_data_changed = handle_data_provider_update,
             .orientation_transition_factor_changed = handle_data_provider_update,
+            .magnetic_interference_changed = handle_data_provider_interference_update,
     });
 
     window_set_user_data(window, data);

@@ -21,7 +21,11 @@ typedef struct {
     AccelData damped_accel_data;
 
     CompassHeadingData heading;
+
+    BatteryChargeState battery_charge_state;
 } DataProviderState;
+
+static const int DATA_PROVIDER_FPS = 23;
 
 // TODO: get rid of me, unfortunately, compass api does not support a context object
 DataProviderState* dataProviderStateSingleton;
@@ -78,7 +82,7 @@ void data_provider_set_presentation_angle(DataProvider *provider, int32_t angle)
 
 static void schedule_update(DataProviderState *state) {
     if(!state->timer) {
-        state->timer = app_timer_register(1000 / 30, (AppTimerCallback) update_state, state);
+        state->timer = app_timer_register(1000 / DATA_PROVIDER_FPS, (AppTimerCallback) update_state, state);
     }
 }
 
@@ -227,6 +231,12 @@ bool data_provider_compass_needs_calibration(DataProvider *provider) {
     return state->heading.compass_status == CompassStatusDataInvalid;
 }
 
+bool data_provider_is_influenced_by_magnetic_interference(DataProvider *provider) {
+    DataProviderState *state = dataProviderStateSingleton;
+    bool result = state->battery_charge_state.is_plugged;
+    return result;
+}
+
 static void data_provider_handle_compass_data(CompassHeadingData heading) {
     DataProviderState *state = dataProviderStateSingleton;
 
@@ -234,6 +244,14 @@ static void data_provider_handle_compass_data(CompassHeadingData heading) {
     // TODO: use true_heading if available
     data_provider_set_target_angle((DataProvider*)dataProviderStateSingleton, TRIG_MAX_ANGLE-heading.magnetic_heading - state->compass_delta_angle);
     call_handler_if_set(state, state->handlers.input_heading_changed);
+}
+
+static void data_provider_handle_battery(BatteryChargeState charge) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "data_provider_handle_battery");
+
+    DataProviderState *state = dataProviderStateSingleton;
+    state->battery_charge_state = charge;
+    call_handler_if_set(state, state->handlers.magnetic_interference_changed);
 }
 
 // ---------------
@@ -255,6 +273,9 @@ DataProvider *data_provider_create(void *user_data, DataProviderHandlers handler
 
     accel_service_set_sampling_rate(ACCEL_SAMPLING_50HZ);
     accel_data_service_subscribe(1, data_provider_handle_accel_data);
+
+    result->battery_charge_state = battery_state_service_peek();
+    battery_state_service_subscribe(data_provider_handle_battery);
 
     schedule_update(result);
 
@@ -278,3 +299,4 @@ void data_provider_destroy(DataProvider *provider) {
         dataProviderStateSingleton = NULL;
     }
 }
+

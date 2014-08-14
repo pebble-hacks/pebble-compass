@@ -17,3 +17,5 @@ void compass_calibration_window_merge_value(CompassCalibrationWindow *window, in
 //! manually set the indicated angle, not needed if you use compass_calibration_window_apply_accel_data()
 void compass_calibration_window_set_current_angle(CompassCalibrationWindow *window, int32_t angle);
 
+//! Use this function to inform user about (electro-)magnetic interferences
+void compass_calibration_window_set_influenced_by_magnetic_interferences(CompassCalibrationWindow *window, bool influenced);

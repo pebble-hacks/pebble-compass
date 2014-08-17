@@ -25,7 +25,7 @@ typedef struct {
     BatteryChargeState battery_charge_state;
 } DataProviderState;
 
-static const int DATA_PROVIDER_FPS = 23;
+static const int DATA_PROVIDER_FPS = 22;
 
 // TODO: get rid of me, unfortunately, compass api does not support a context object
 DataProviderState* dataProviderStateSingleton;

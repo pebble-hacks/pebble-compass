@@ -29,7 +29,11 @@ static const enum GColor CalibrationWindowBackgroundColor = GColorBlack;
 
 static char *const INITIAL_HEADLINE = "Calibration";
 static char *const INITIAL_DESCRIPTION = "Tilt Pebble to\nroll ball around";
+
+static void _gpath_draw_filled(GContext* ctx, GPath* path) ;
+
 #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
 void compass_calibration_window_set_current_angle(CompassCalibrationWindow *window, int32_t angle) {
     const Window *w = (Window*) window;
@@ -39,7 +43,7 @@ void compass_calibration_window_set_current_angle(CompassCalibrationWindow *wind
     layer_mark_dirty(window_get_root_layer(w));
 }
 
-void update_description_if_needed(CompassCalibrationWindowData *data) {// update instructions of necessary
+static void update_description_if_needed(CompassCalibrationWindowData *data) {// update instructions of necessary
     if(!data->headline_layer) return;
 
     char *headline = NULL;
@@ -204,7 +208,8 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
             // gpath_draw_filled does not support chaning .num_points after gpath has been created
             // hence, put 4th point into 3rd
             path_info.points[3] = points[s2].inner;
-            gpath_draw_filled(ctx, path);
+//            gpath_draw_filled(ctx, path);
+            _gpath_draw_filled(ctx, path);
         }
     }
     gpath_destroy(path);
@@ -215,7 +220,7 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
 
 }
 
-TextLayer * create_and_add_text_layer(Layer *window_layer, GRect *all_text_rect, GAlign alignment, char *font_key, char *text) {
+static TextLayer * create_and_add_text_layer(Layer *window_layer, GRect *all_text_rect, GAlign alignment, char *font_key, char *text) {
     const GFont font = fonts_get_system_font(font_key);
     const GTextAlignment text_alignment = GTextAlignmentCenter;
 
@@ -304,3 +309,131 @@ void compass_calibration_window_destroy(CompassCalibrationWindow *window) {
     window_destroy((Window *)window);
 }
 
+
+// -----
+// TODO: remove this duplication once PBL-5833 has been fixed
+// also, see https://github.com/pebble/tintin/pull/2261
+
+static void swap16(int16_t *a, int16_t *b) {
+    int16_t tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+static void sort16(int16_t *values, size_t length) {
+    for (unsigned int i = 0; i < length; i++) {
+        for (unsigned int j = i+1; j < length; j++) {
+            if (values[i] > values[j]) {
+                swap16(&values[i], &values[j]);
+            }
+        }
+    }
+}
+
+static int integer_divide_round_closest(const int n, const int d) {
+    return ((n < 0) ^ (d < 0)) ? ((n - d/2)/d) : ((n + d/2)/d);
+}
+
+static void _gpath_draw_filled(GContext* ctx, GPath* path) {
+    if (path->num_points < 2) {
+        return;
+    }
+
+    GPoint* rot_points = path->points;
+    int min_x, max_x, min_y, max_y;
+    GPoint rot_start, rot_end;
+    bool found_start_direction = false;
+    bool start_is_down = false;
+
+    rot_points[0] = rot_end = path->points[0];
+    min_x = max_x = rot_points[0].x;
+    min_y = max_y = rot_points[0].y;
+
+    // begin finding the last path segment's direction going backwards through the path
+    // we must go backwards because we find intersections going forwards
+    for (int i = path->num_points - 1; i > 0; --i) {
+        rot_start = path->points[i];
+        if (min_x > rot_points[i].x) { min_x = rot_points[i].x; }
+        if (max_x < rot_points[i].x) { max_x = rot_points[i].x; }
+        if (min_y > rot_points[i].y) { min_y = rot_points[i].y; }
+        if (max_y < rot_points[i].y) { max_y = rot_points[i].y; }
+
+        if (found_start_direction) {
+            continue;
+        }
+
+        // use the first non-horizontal path segment's direction as the start direction
+        if (rot_end.y != rot_start.y) {
+            start_is_down = rot_end.y > rot_start.y;
+            found_start_direction = true;
+        }
+
+        rot_end = rot_start;
+    }
+
+    // x-intersections of path segments whose direction is up
+    int16_t* intersections_up = malloc(path->num_points * sizeof(int16_t));
+    // x-intersections of path segments whose direction is down
+    int16_t* intersections_down = malloc(path->num_points * sizeof(int16_t));
+    size_t intersection_up_count;
+    size_t intersection_down_count;
+
+    // find all of the horizontal intersections and draw them
+    min_y = MAX(min_y, 0);
+    max_y = MIN(max_y, 167);
+    for (int i = min_y; i <= max_y; ++i) {
+        // initialize with 0 intersections
+        intersection_down_count = 0;
+        intersection_up_count = 0;
+
+        // horizontal path segments don't have a direction and depend upon the last path segment's direction
+        // keep track of the last path direction for horizontal path segments to use
+        bool last_is_down = start_is_down;
+        rot_end = rot_points[0];
+
+        // find the intersections
+        for (unsigned int j = 0; j < path->num_points; ++j) {
+            rot_start = rot_points[j];
+            if (j + 1 < path->num_points) {
+                rot_end = rot_points[j + 1];
+            } else {
+                // wrap to the first point
+                rot_end = rot_points[0];
+            }
+
+            // if the line is on/crosses this height
+            if ((rot_start.y - i) * (rot_end.y - i) <= 0) {
+                bool is_down = rot_end.y != rot_start.y ? rot_end.y > rot_start.y : last_is_down;
+                // don't count end points in the same direction to avoid double intersections
+                if (!(rot_start.y == i && last_is_down == is_down)) {
+                    // linear interpolation of the line intersection
+                    int16_t x = (int16_t)(rot_start.x + integer_divide_round_closest((rot_end.x - rot_start.x) * (i - rot_start.y), (rot_end.y - rot_start.y)));
+                    if (is_down) {
+                        intersections_down[intersection_down_count] = x;
+                        intersection_down_count++;
+                    } else {
+                        intersections_up[intersection_up_count] = x;
+                        intersection_up_count++;
+                    }
+                }
+                last_is_down = is_down;
+            }
+        }
+
+        // sort the intersections
+        sort16(intersections_up, intersection_up_count);
+        sort16(intersections_down, intersection_down_count);
+
+        // draw the line segments
+        for (int j = 0; j < (int)MIN(intersection_up_count, intersection_down_count); j++) {
+            int16_t x_a = intersections_up[j];
+            int16_t x_b = intersections_down[j];
+            if (x_a > x_b) {
+                swap16(&x_a, &x_b);
+            }
+            graphics_fill_rect(ctx, GRect(x_a, (int16_t)i, (int16_t)(x_b - x_a + 1), 1), 0, GCornerNone);
+        }
+    }
+    free(intersections_up);
+    free(intersections_down);
+}

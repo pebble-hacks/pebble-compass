@@ -25,3 +25,6 @@ Also, the compass value fakes a physical model with friction and inertia.
 - `ticks_layer.{h,c}`, renders the actual compass rose/band
 - `inverted_cross_hair_layer.{h,c}`, needed to draw the cross-hair with public API (this is sad, see comments in the code)
 	
+## Remarks
+
+There are a few TODOs in the code base. It's mostly about the usage of floats where one could use ints instead to save code space. Also, the ongoing animations of this app (and the missing exit condition in `data_provider.c`) have a strong impact on the battery life. Please read the comments if you consider using `data_provider.{h,c}` in your projects.

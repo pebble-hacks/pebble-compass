@@ -22,7 +22,9 @@ static TicksLayerData *ticks_layer_get_ticks_data(TicksLayer *layer) {
 
 static GPoint point_from_center(TicksLayer* layer, int32_t angle, int32_t radius) {
     // this is the heart of the smooth transition
-    // it calculates two coordinates "rose" (polar) and "band" cartesian to blend between them
+    // it calculates two coordinates "rose" (polar) and "band" (cartesian) to blend between them
+
+    // TODO: get rid of floats
 
     const GRect bounds = layer_get_bounds(ticks_layer_get_layer(layer));
     const GPoint center = grect_center_point(&bounds);
@@ -57,7 +59,7 @@ static GPoint point_from_center(TicksLayer* layer, int32_t angle, int32_t radius
 }
 
 static bool ticks_layer_is_polar(TicksLayer *layer) {
-    return ticks_layer_get_ticks_data(layer)->transition_factor <= 0.01;
+    return ticks_layer_get_ticks_data(layer)->transition_factor <= 0.01f;
 }
 
 static int32_t tick_len(TicksLayer *layer, int tick_idx) {

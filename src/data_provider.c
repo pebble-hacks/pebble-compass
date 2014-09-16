@@ -25,9 +25,11 @@ typedef struct {
     BatteryChargeState battery_charge_state;
 } DataProviderState;
 
+// TODO: get rid of floats throughout this file
+
 static const int DATA_PROVIDER_FPS = 22;
 
-// TODO: get rid of me, unfortunately, compass api does not support a context object
+// TODO: get rid of this singleton, unfortunately, compass api does not support a context object
 DataProviderState* dataProviderStateSingleton;
 
 static void schedule_update(DataProviderState *state);
@@ -67,6 +69,7 @@ static void update_state(DataProviderState *state) {
     // but in reality the compass input constantly changes
     // to simplify dependent code (e.g. for transitions that require constant redraws)
     // we simply loop infinitely
+    // be aware that this drains the battery!
 }
 
 int32_t data_provider_get_presentation_angle(DataProvider *provider) {
@@ -132,9 +135,10 @@ float data_provider_get_orientation_transition_factor(DataProvider* provider) {
     return state->orientation_transition_factor;
 }
 
+// easing is currently only supported for PropertyAnimations, see PBL-6328
 static float CubicEaseInOut(float p)
 {
-    if(p < 0.5)
+    if(p < 0.5f)
     {
         return 4 * p * p * p;
     }
@@ -203,8 +207,8 @@ static void merge_accel_data(AccelData *dest, AccelData *next, float factor) {
 static void data_provider_handle_accel_data(AccelData *data, uint32_t num_samples) {
     DataProviderState *state = dataProviderStateSingleton;
 
-    merge_accel_data(&state->last_accel_data, data, 0.99);
-    merge_accel_data(&state->damped_accel_data, data, 0.3);
+    merge_accel_data(&state->last_accel_data, data, 0.99f);
+    merge_accel_data(&state->damped_accel_data, data, 0.3f);
     call_handler_if_set(state, state->handlers.input_accel_data_changed);
 
 
@@ -263,8 +267,8 @@ DataProvider *data_provider_create(void *user_data, DataProviderHandlers handler
     result->user_data = user_data;
     result->handlers = handlers;
 
-    result->friction = 0.9;
-    result->attraction = 0.05;
+    result->friction = 0.9f;
+    result->attraction = 0.05f;
     result->heading.compass_status = CompassStatusCalibrated; // assume calibrated data on default
 
     dataProviderStateSingleton = result;

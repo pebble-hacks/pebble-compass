@@ -1,4 +1,4 @@
-#include <pebble.h>
+#include "pebble.h"
 
 typedef struct CompassWindow CompassWindow;
 

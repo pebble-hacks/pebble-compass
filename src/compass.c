@@ -1,4 +1,4 @@
-#include <pebble.h>
+#include "pebble.h"
 #include "compass_window.h"
 #include "compass_calibration_window.h"
 

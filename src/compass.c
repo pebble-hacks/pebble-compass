@@ -5,16 +5,17 @@
 static CompassWindow *compass_window;
 static CompassCalibrationWindow *calibration_window;
 
-//#define CALIBRATION_FAKE
+// uncomment this line to do nothing but showing the calibration screen
+//#define DEMO_CALIBRATION_MODE
 
-#ifdef CALIBRATION_FAKE
+#ifdef DEMO_CALIBRATION_MODE
 
 static void fake_calibration_window(void) {
     if(!calibration_window) return;
 
-    // completely fill the ring to see rendering problems due to PBL-5833
-    for(int i = 0; i < 360; i++)
-        compass_calibration_window_merge_value(calibration_window, i * TRIG_MAX_ANGLE / 360, 255);
+//    // completely fill the ring to see rendering problems due to PBL-5833
+//    for(int i = 0; i < 360; i++)
+//        compass_calibration_window_merge_value(calibration_window, i * TRIG_MAX_ANGLE / 360, 255);
 
     static int32_t angle;
     static uint16_t intensity;
@@ -24,15 +25,13 @@ static void fake_calibration_window(void) {
     compass_calibration_window_merge_value(calibration_window, angle, (uint8_t) (intensity / 5));
     compass_calibration_window_set_current_angle(calibration_window, angle);
 
-
-
-    app_timer_register(1000/10, (AppTimerCallback) fake_calibration_window, 0);
+    app_timer_register(1000/20, (AppTimerCallback) fake_calibration_window, 0);
 }
 
 #endif
 
 static void init(void) {
-#ifdef CALIBRATION_FAKE
+#ifdef DEMO_CALIBRATION_MODE
     calibration_window = compass_calibration_window_create();
     window_stack_push(compass_calibration_window_get_window(calibration_window), true);
     fake_calibration_window();
@@ -45,7 +44,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
-#ifdef CALIBRATION_FAKE
+#ifdef DEMO_CALIBRATION_MODE
     compass_calibration_window_destroy(calibration_window);
 #else
     compass_window_destroy(compass_window);

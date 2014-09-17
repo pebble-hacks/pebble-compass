@@ -9,7 +9,7 @@ typedef struct {
     TextLayer *headline_layer;
     TextLayer *description_layer;
 
-    bool influenced_by_interferences;
+    bool influenced_by_interference;
 
     // internal state
     uint8_t segment_value[CALIBRATION_NUM_SEGMENTS];
@@ -43,14 +43,14 @@ void compass_calibration_window_set_current_angle(CompassCalibrationWindow *wind
     layer_mark_dirty(window_get_root_layer(w));
 }
 
-static void update_description_if_needed(CompassCalibrationWindowData *data) {// update instructions of necessary
+static void update_description_if_needed(CompassCalibrationWindowData *data) {
     if(!data->headline_layer) return;
 
     char *headline = NULL;
     char *description = NULL;
 
-    if(data->influenced_by_interferences) {
-        headline = "Interferences";
+    if(data->influenced_by_interference) {
+        headline = "Interference";
         description = "Please unplug\nthe charger.";
     } else {
         bool all_fully_filled = true;
@@ -91,7 +91,7 @@ void compass_calibration_window_merge_value(CompassCalibrationWindow *window, in
     const Window *w = (Window*) window;
     CompassCalibrationWindowData *data = window_get_user_data(w);
 
-    if(data->influenced_by_interferences) {
+    if(data->influenced_by_interference) {
         return;
     }
 
@@ -104,9 +104,9 @@ void compass_calibration_window_merge_value(CompassCalibrationWindow *window, in
 }
 
 void compass_calibration_window_apply_accel_data(CompassCalibrationWindow *calibration_window, AccelData accel_data) {
-    int32_t angle = atan2_lookup(accel_data.y, accel_data.x) + 90 * TRIG_MAX_ANGLE / 360;
+    int32_t angle = atan2_lookup(accel_data.y, accel_data.x) + (90 * TRIG_MAX_ANGLE / 360);
     int intensity = abs(accel_data.z / 5);
-    intensity = intensity>255 ? 255 : intensity;
+    intensity = MIN(255, intensity);
     intensity = 255 - intensity;
 
     compass_calibration_window_set_current_angle(calibration_window, angle);
@@ -124,14 +124,14 @@ static void reset_segment_data(CompassCalibrationWindowData *data, bool fill_wit
     }
 }
 
-void compass_calibration_window_set_influenced_by_magnetic_interferences(CompassCalibrationWindow *window, bool influenced) {
+void compass_calibration_window_set_influenced_by_magnetic_interference(CompassCalibrationWindow *window, bool influenced) {
     const Window *w = (Window*) window;
     CompassCalibrationWindowData *data = window_get_user_data(w);
 
-    if(data->influenced_by_interferences == influenced) {
+    if(data->influenced_by_interference == influenced) {
         return;
     }
-    data->influenced_by_interferences = influenced;
+    data->influenced_by_interference = influenced;
 
     reset_segment_data(data, !influenced);
     update_description_if_needed(data);
@@ -142,7 +142,8 @@ Window *compass_calibration_window_get_window(CompassCalibrationWindow *window) 
 }
 
 static GPoint point_at_angle(GPoint center, int angle, int16_t radius) {
-    return GPoint(center.x + (int16_t)(sin_lookup(angle)*radius/ TRIG_MAX_RATIO), center.y + (int16_t)(cos_lookup(angle)*radius/ TRIG_MAX_RATIO));
+    return GPoint(center.x + (int16_t)(sin_lookup(angle) * radius / TRIG_MAX_RATIO),
+                  center.y + (int16_t)(cos_lookup(angle) * radius / TRIG_MAX_RATIO));
 }
 
 static void draw_indicator(Layer *layer, GContext* ctx) {
@@ -205,7 +206,7 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
             path_info.points[0] = points[s].inner;
             path_info.points[1] = segment_filled ? points[s].outer : points[s].mid;
             path_info.points[2] = segment_filled ? points[s2].outer : points[s2].mid;
-            // gpath_draw_filled does not support chaning .num_points after gpath has been created
+            // gpath_draw_filled does not support changing .num_points after gpath has been created
             // hence, put 4th point into 3rd
             path_info.points[3] = points[s2].inner;
 //            gpath_draw_filled(ctx, path);
@@ -248,7 +249,7 @@ static void window_load(Window *window) {
     frame = grect_crop(frame, CALIBRATION_WINDOW_RING_MARGIN);
     data->indicator_layer = layer_create_with_data(frame, sizeof(CompassCalibrationWindowDataPtr));
     data->current_angle = 20 * TRIG_MAX_ANGLE / 360;
-    // unfortunately, once cannot pass a pointer to your own data in layer_create_with_data
+    // unfortunately, one cannot pass a pointer to your own data in layer_create_with_data
     // hence, we interpret the allocated space as pointer to pointer...
     *(CompassCalibrationWindowDataPtr*)layer_get_data(data->indicator_layer) = data;
     layer_set_update_proc(data->indicator_layer, draw_indicator);

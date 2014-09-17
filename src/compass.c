@@ -19,7 +19,7 @@ static void fake_calibration_window(void) {
 
     static int32_t angle;
     static uint16_t intensity;
-    angle += 15+TRIG_MAX_ANGLE / 360;
+    angle += 15 + (TRIG_MAX_ANGLE / 360);
     intensity += 3;
 
     compass_calibration_window_merge_value(calibration_window, angle, (uint8_t) (intensity / 5));

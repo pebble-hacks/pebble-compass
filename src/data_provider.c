@@ -25,11 +25,11 @@ typedef struct {
     BatteryChargeState battery_charge_state;
 } DataProviderState;
 
-// TODO: get rid of floats throughout this file
+// TODO: get rid of floats throughout this file (see readme)
 
 static const int DATA_PROVIDER_FPS = 22;
 
-// TODO: get rid of this singleton, unfortunately, compass api does not support a context object
+// TODO: get rid of this singleton. Unfortunately, compass API does not support a context object
 DataProviderState* dataProviderStateSingleton;
 
 static void schedule_update(DataProviderState *state);
@@ -43,18 +43,18 @@ static void call_handler_if_set(DataProviderState *state, DataProviderHandler ha
 static void update_state(DataProviderState *state) {
     state->presentation_angle = state->presentation_angle + state->angular_velocity;
     int32_t distance = state->target_angle - state->presentation_angle;
-    while(distance < -TRIG_MAX_ANGLE/2) distance += TRIG_MAX_ANGLE;
-    while(distance > +TRIG_MAX_ANGLE/2) distance -= TRIG_MAX_ANGLE;
+    while (distance < -TRIG_MAX_ANGLE / 2) distance += TRIG_MAX_ANGLE;
+    while (distance > +TRIG_MAX_ANGLE / 2) distance -= TRIG_MAX_ANGLE;
 
     float attraction_factor = state->attraction;
-    if(state->handlers.attraction_modifier) {
-      attraction_factor = state->handlers.attraction_modifier((DataProvider*)state, attraction_factor, state->user_data);
+    if (state->handlers.attraction_modifier) {
+        attraction_factor = state->handlers.attraction_modifier((DataProvider *) state, attraction_factor, state->user_data);
     }
-    int32_t attraction = (int32_t)(distance * attraction_factor);
+    int32_t attraction = (int32_t) (distance * attraction_factor);
     state->angular_velocity += attraction;
     float friction = state->friction;
-    if(state->handlers.friction_modifier) {
-      friction = state->handlers.friction_modifier((DataProvider*)state, friction, state->user_data);
+    if (state->handlers.friction_modifier) {
+        friction = state->handlers.friction_modifier((DataProvider *) state, friction, state->user_data);
     }
     state->angular_velocity = (int32_t) (state->angular_velocity * friction);
 
@@ -96,8 +96,8 @@ int32_t data_provider_get_target_angle(DataProvider *provider) {
 
 void data_provider_set_target_angle(DataProvider *provider, int32_t angle) {
     DataProviderState *state = (DataProviderState *) provider;
-    if(state->handlers.target_angle_modifier) {
-      angle = state->handlers.target_angle_modifier(provider, angle, state->user_data);
+    if (state->handlers.target_angle_modifier) {
+        angle = state->handlers.target_angle_modifier(provider, angle, state->user_data);
     }
     state->target_angle = angle;
     schedule_update(state);
@@ -197,11 +197,10 @@ static void merge_accel_data(AccelData *dest, AccelData *next, float factor) {
     *dest = (AccelData){
             .did_vibrate = next->did_vibrate,
             .timestamp = next->timestamp,
-            .x = (int16_t) (next->x * factor + (1- factor) * dest->x),
-            .y = (int16_t) (next->y * factor + (1- factor) * dest->y),
-            .z = (int16_t) (next->z * factor + (1- factor) * dest->z),
+            .x = (int16_t)(next->x * factor + (1 - factor) * dest->x),
+            .y = (int16_t)(next->y * factor + (1 - factor) * dest->y),
+            .z = (int16_t)(next->z * factor + (1 - factor) * dest->z),
     };
-
 }
 
 static void data_provider_handle_accel_data(AccelData *data, uint32_t num_samples) {
@@ -245,7 +244,8 @@ static void data_provider_handle_compass_data(CompassHeadingData heading) {
     DataProviderState *state = dataProviderStateSingleton;
 
     state->heading = heading;
-    // TODO: use true_heading if available
+
+    // TODO: look at is_declination_valid and use true_heading if available (configured by user?)
     data_provider_set_target_angle((DataProvider*)dataProviderStateSingleton, TRIG_MAX_ANGLE-heading.magnetic_heading - state->compass_delta_angle);
     call_handler_if_set(state, state->handlers.input_heading_changed);
 }
@@ -269,7 +269,7 @@ DataProvider *data_provider_create(void *user_data, DataProviderHandlers handler
 
     result->friction = 0.9f;
     result->attraction = 0.05f;
-    result->heading.compass_status = CompassStatusCalibrated; // assume calibrated data on default
+    result->heading.compass_status = CompassStatusCalibrated; // assume calibrated data by default
 
     dataProviderStateSingleton = result;
 

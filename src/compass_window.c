@@ -85,13 +85,13 @@ static void compass_layer_update_layout(CompassWindowData *data) {
     text_layer_set_text(data->angle_layer, angle_text);
     GRect r = rect_blend(&data->angle_layer_rect_rose, &data->angle_layer_rect_band, transition_factor);
     layer_set_frame(text_layer_get_layer(data->angle_layer), r);
-    // workaround!
-    // TODO: file a bug for tintin applib
+    // workaround for PBL-8492, manually call set_bounds after changing the frame
     layer_set_bounds(text_layer_get_layer(data->angle_layer), (GRect){.size=r.size});
     text_layer_set_text_alignment(data->angle_layer, GTextAlignmentRight);
 
     static char *direction_texts[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
-    int32_t direction_index = ((normalized_angle + 23) / (360 / ARRAY_LENGTH(direction_texts))) % ARRAY_LENGTH(direction_texts);
+    const int degrees_per_text = 360 / ARRAY_LENGTH(direction_texts);
+    int32_t direction_index = ((normalized_angle + (degrees_per_text / 2)) / degrees_per_text) % ARRAY_LENGTH(direction_texts);
     text_layer_set_text(data->direction_layer, direction_texts[direction_index]);
     layer_set_frame(text_layer_get_layer(data->direction_layer), rect_blend(&data->direction_layer_rect_rose, &data->direction_layer_rect_band, transition_factor));
 
@@ -134,8 +134,8 @@ static void compass_window_load(Window *window) {
 
     const int16_t direction_layer_width = 40;
     const int16_t direction_layer_margin_band = 40;
-    data->direction_layer_rect_rose = (GRect) { .origin = { bounds.size.w - direction_layer_width, (int16_t)(bounds.size.h- text_height_rose)}, .size = { direction_layer_width, text_height_rose} };
-    data->direction_layer_rect_band = (GRect) { .origin = { bounds.size.w - direction_layer_width-direction_layer_margin_band, (int16_t)(bounds.size.h- text_height_band)}, .size = { direction_layer_width, text_height_rose} };
+    data->direction_layer_rect_rose = (GRect){.origin = {bounds.size.w - direction_layer_width, (int16_t)(bounds.size.h - text_height_rose)}, .size = {direction_layer_width, text_height_rose}};
+    data->direction_layer_rect_band = (GRect){.origin = {bounds.size.w - direction_layer_width - direction_layer_margin_band, (int16_t)(bounds.size.h - text_height_band)}, .size = {direction_layer_width, text_height_rose}};
     data->direction_layer = text_layer_create(data->direction_layer_rect_rose);
     text_layer_set_text_alignment(data->direction_layer, GTextAlignmentCenter);
     text_layer_set_font(data->direction_layer, text_font);
@@ -146,8 +146,8 @@ static void compass_window_load(Window *window) {
     const int16_t angle_layer_width_rose = 40;
     const int16_t angle_layer_width_band = 65;
 
-    data->angle_layer_rect_rose = (GRect) { .origin = { 0, (int16_t)(bounds.size.h- text_height_rose)}, .size = { angle_layer_width_rose, text_height_rose} };
-    data->angle_layer_rect_band = (GRect) { .origin = { 0, (int16_t)(bounds.size.h- text_height_band)}, .size = { angle_layer_width_band, text_height_band} };
+    data->angle_layer_rect_rose = (GRect){.origin = {0, (int16_t)(bounds.size.h - text_height_rose)}, .size = {angle_layer_width_rose, text_height_rose}};
+    data->angle_layer_rect_band = (GRect){.origin = {0, (int16_t)(bounds.size.h - text_height_band)}, .size = {angle_layer_width_band, text_height_band}};
     data->angle_layer = text_layer_create(data->angle_layer_rect_rose);
     text_layer_set_text_alignment(data->angle_layer, GTextAlignmentRight);
     text_layer_set_font(data->angle_layer, text_font);
@@ -155,13 +155,13 @@ static void compass_window_load(Window *window) {
     text_layer_set_background_color(data->angle_layer, GColorClear);
     layer_add_child(window_layer, text_layer_get_layer(data->angle_layer));
 
-    GRect roseRect = ((GRect){.origin={0, 8}, .size={bounds.size.w, (int16_t)(bounds.size.h-15)}});
+    GRect roseRect = ((GRect){.origin={0, 8}, .size={bounds.size.w, (int16_t)(bounds.size.h - 15)}});
 
     data->ticks_layer = ticks_layer_create(roseRect);
     layer_add_child(window_layer, ticks_layer_get_layer(data->ticks_layer));
 
-    data->pointer_layer_rect_rose = (GRect){{71,0}, {3,20}};
-    data->pointer_layer_rect_band = (GRect){{71,18}, {3,40}};
+    data->pointer_layer_rect_rose = (GRect){{71, 0}, {3, 20}};
+    data->pointer_layer_rect_band = (GRect){{71, 18}, {3, 40}};
     data->pointer_layer = inverter_layer_create(data->pointer_layer_rect_rose);
     layer_add_child(window_layer, inverter_layer_get_layer(data->pointer_layer));
 
@@ -176,11 +176,11 @@ static void compass_window_load(Window *window) {
     data->small_cross_hair_layer = inverted_cross_hair_layer_create(GRectZero);
     layer_add_child(window_layer, inverted_cross_hair_layer_get_layer(data->small_cross_hair_layer));
 
-    data_provider_set_target_angle(data->data_provider, (360-45) * TRIG_MAX_ANGLE / 360);
+    data_provider_set_target_angle(data->data_provider, (360 - 45) * TRIG_MAX_ANGLE / 360);
 }
 
 static void compass_window_appear(Window *window) {
-    // needed to prevent calibration window to appear before the compass was presented
+    // needed to prevent calibration window appearing before the compass was presented
     CompassWindowData *data = window_get_user_data(window);
     data->window_appeared = true;
 }
@@ -200,27 +200,27 @@ static void compass_window_unload(Window *window) {
 void propagate_interference_to_calibration_window(CompassWindowData *window_data) {
     if(window_data->calibration_window) {
         bool influenced = data_provider_is_influenced_by_magnetic_interference(window_data->data_provider);
-        compass_calibration_window_set_influenced_by_magnetic_interferences(window_data->calibration_window, influenced);
+        compass_calibration_window_set_influenced_by_magnetic_interference(window_data->calibration_window, influenced);
     }
 }
 
-static void handle_data_provider_update(DataProvider *provider, void* user_data) {
+static void handle_data_provider_update(DataProvider *provider, void *user_data) {
     // switch between calibration window and actual compass
 
     CompassWindowData *data = user_data;
-    if(data->calibration_window && window_stack_get_top_window() == compass_calibration_window_get_window(data->calibration_window)){
+    if (data->calibration_window && window_stack_get_top_window() == compass_calibration_window_get_window(data->calibration_window)) {
         AccelData accel_data = data_provider_get_damped_accel_data(provider);
         compass_calibration_window_apply_accel_data(data->calibration_window, accel_data);
 
-        if(!data_provider_compass_needs_calibration(provider)) {
+        if (!data_provider_compass_needs_calibration(provider)) {
             window_stack_pop(true);
             vibes_long_pulse();
         }
     } else {
         compass_layer_update_layout(data);
 
-        if(data->window_appeared && data_provider_compass_needs_calibration(provider)) {
-            if(!data->calibration_window) {
+        if (data->window_appeared && data_provider_compass_needs_calibration(provider)) {
+            if (!data->calibration_window) {
                 data->calibration_window = compass_calibration_window_create();
             }
             propagate_interference_to_calibration_window(data);

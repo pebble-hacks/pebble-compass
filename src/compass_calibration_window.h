@@ -18,4 +18,4 @@ void compass_calibration_window_merge_value(CompassCalibrationWindow *window, in
 void compass_calibration_window_set_current_angle(CompassCalibrationWindow *window, int32_t angle);
 
 //! Use this function to inform user about (electro-)magnetic interferences
-void compass_calibration_window_set_influenced_by_magnetic_interferences(CompassCalibrationWindow *window, bool influenced);
+void compass_calibration_window_set_influenced_by_magnetic_interference(CompassCalibrationWindow *window, bool influenced);

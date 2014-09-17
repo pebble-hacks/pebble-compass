@@ -3,7 +3,7 @@
   "shortName": "Compass",
   "longName": "Compass",
   "companyName": "MakeAwesomeHappen",
-  "versionCode": 3,
+  "versionCode": 4,
   "versionLabel": "1.0",
   "watchapp": {
     "watchface": false

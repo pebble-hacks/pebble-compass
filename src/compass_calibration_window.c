@@ -272,12 +272,13 @@ static void window_unload(Window *window) {
     memset(data, 0, sizeof(CompassCalibrationWindowData));
 }
 
-static void do_nothing_click_handler(ClickRecognizerRef recognizer, void *context) {
-    // prevents window from being dismissed by user
+static void pop_all_click_handler(ClickRecognizerRef recognizer, void *context) {
+    // will quit the app
+    window_stack_pop_all(false);
 }
 
 static void click_config_provider(void *context) {
-    window_single_click_subscribe(BUTTON_ID_BACK, do_nothing_click_handler);
+    window_single_click_subscribe(BUTTON_ID_BACK, pop_all_click_handler);
 }
 
 CompassCalibrationWindow *compass_calibration_window_create() {

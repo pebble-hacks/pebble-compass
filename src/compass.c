@@ -3,12 +3,12 @@
 #include "compass_calibration_window.h"
 
 static CompassWindow *compass_window;
-static CompassCalibrationWindow *calibration_window;
 
 // uncomment this line to do nothing but showing the calibration screen
 //#define DEMO_CALIBRATION_MODE
 
 #ifdef DEMO_CALIBRATION_MODE
+static CompassCalibrationWindow *calibration_window;
 
 static void fake_calibration_window(void) {
     if(!calibration_window) return;

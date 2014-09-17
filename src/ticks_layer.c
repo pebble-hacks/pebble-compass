@@ -77,7 +77,6 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
     TicksLayer *ticks_layer = (TicksLayer *)layer;
     TicksLayerData *data = layer_get_ticks_data(layer);
     const GRect bounds = layer_get_bounds(layer);
-    const GPoint center = grect_center_point(&bounds);
 
     const int32_t r2 = (MIN(bounds.size.w, bounds.size.h) / 2);
 
@@ -130,7 +129,7 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
         } point_helper;
 
         GFont font_large = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-        GFont font_small = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+//        GFont font_small = fonts_get_system_font(FONT_KEY_GOTHIC_14);
         point_helper point_helpers[] = {
                 {"N", TRIG_MAX_ANGLE * 0 / 8, font_large},
 //                {"NE",TRIG_MAX_ANGLE * 1 / 8, font_small},

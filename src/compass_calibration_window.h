@@ -19,3 +19,14 @@ void compass_calibration_window_set_current_angle(CompassCalibrationWindow *wind
 
 //! Use this function to inform user about (electro-)magnetic interferences
 void compass_calibration_window_set_influenced_by_magnetic_interference(CompassCalibrationWindow *window, bool influenced);
+
+typedef void (*CompassCalibrationWindowHandler)(CompassCalibrationWindow *provider);
+
+
+//! sets a handler that will be called when the user presses the back button during calibration
+//! if you don't set a handler or set NULL, pressing the back button will call window_stack_pop_all(false)
+void compass_calibration_window_set_back_button_handler(CompassCalibrationWindow *window,
+        CompassCalibrationWindowHandler back_button_handler);
+
+//! returns the previously set handler from compass_calibration_window_set_back_button_handler
+CompassCalibrationWindowHandler compass_calibration_window_get_back_button_handler(CompassCalibrationWindow *window);

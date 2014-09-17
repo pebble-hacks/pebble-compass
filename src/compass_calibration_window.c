@@ -14,6 +14,8 @@ typedef struct {
     // internal state
     uint8_t segment_value[CALIBRATION_NUM_SEGMENTS];
     int32_t current_angle;
+
+    CompassCalibrationWindowHandler back_button_handler;
 } CompassCalibrationWindowData;
 
 typedef CompassCalibrationWindowData* CompassCalibrationWindowDataPtr;
@@ -140,6 +142,18 @@ void compass_calibration_window_set_influenced_by_magnetic_interference(CompassC
 Window *compass_calibration_window_get_window(CompassCalibrationWindow *window) {
     return (Window *)window;
 }
+
+void compass_calibration_window_set_back_button_handler(CompassCalibrationWindow *window,
+        CompassCalibrationWindowHandler back_button_handler) {
+    CompassCalibrationWindowData *data = window_get_user_data((Window*)window);
+    data->back_button_handler = back_button_handler;
+}
+
+CompassCalibrationWindowHandler compass_calibration_window_get_back_button_handler(CompassCalibrationWindow *window) {
+    CompassCalibrationWindowData *data = window_get_user_data((Window*)window);
+    return data->back_button_handler;
+}
+
 
 static GPoint point_at_angle(GPoint center, int angle, int16_t radius) {
     return GPoint(center.x + (int16_t)(sin_lookup(angle) * radius / TRIG_MAX_RATIO),
@@ -274,8 +288,14 @@ static void window_unload(Window *window) {
 }
 
 static void pop_all_click_handler(ClickRecognizerRef recognizer, void *context) {
-    // will quit the app
-    window_stack_pop_all(false);
+    CompassCalibrationWindow *window = context;
+    CompassCalibrationWindowData* data = window_get_user_data((Window*)window);
+    if (data->back_button_handler) {
+        data->back_button_handler(window);
+    } else {
+        // will quit the app
+        window_stack_pop_all(false);
+    }
 }
 
 static void click_config_provider(void *context) {
@@ -439,3 +459,4 @@ static void _gpath_draw_filled(GContext* ctx, GPath* path) {
     free(intersections_up);
     free(intersections_down);
 }
+

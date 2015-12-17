@@ -26,9 +26,6 @@ static const int CALIBRATION_THRESHOLD_FILLED = 150;
 
 static const int CALIBRATION_WINDOW_RING_MARGIN = 0;
 
-static const enum GColor CalibrationWindowForegroundColor = GColorWhite;
-static const enum GColor CalibrationWindowBackgroundColor = GColorBlack;
-
 static char *const INITIAL_HEADLINE = "Calibration";
 static char *const INITIAL_DESCRIPTION = "Tilt Pebble to\nroll ball around";
 
@@ -171,8 +168,8 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
 
     const GPoint c = grect_center_point(&rect);
 
-    graphics_context_set_stroke_color(ctx, CalibrationWindowForegroundColor);
-    graphics_context_set_fill_color(ctx, CalibrationWindowForegroundColor);
+    graphics_context_set_stroke_color(ctx, GColorWhite);
+    graphics_context_set_fill_color(ctx, GColorWhite);
 
     // as we don't have a graphics_fill_ring_segment() we fake a circle here
     // in reality we are painting and filling a regular polygon
@@ -248,7 +245,7 @@ static TextLayer * create_and_add_text_layer(Layer *window_layer, GRect *all_tex
     TextLayer *layer = text_layer_create(label_rect);
     text_layer_set_text(layer, text);
     text_layer_set_background_color(layer, GColorClear);
-    text_layer_set_text_color(layer, CalibrationWindowForegroundColor);
+    text_layer_set_text_color(layer, GColorWhite);
     text_layer_set_font(layer, font);
     text_layer_set_text_alignment(layer, text_alignment);
     layer_add_child(window_layer, text_layer_get_layer(layer));
@@ -304,7 +301,7 @@ static void click_config_provider(void *context) {
 
 CompassCalibrationWindow *compass_calibration_window_create() {
     Window *window = window_create();
-    window_set_background_color(window, CalibrationWindowBackgroundColor);
+    window_set_background_color(window, GColorBlack);
     window_set_click_config_provider(window, click_config_provider);
 
     CompassCalibrationWindowData *data = malloc(sizeof(CompassCalibrationWindowData));
@@ -459,4 +456,3 @@ static void _gpath_draw_filled(GContext* ctx, GPath* path) {
     free(intersections_up);
     free(intersections_down);
 }
-

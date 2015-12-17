@@ -67,7 +67,7 @@ static int32_t tick_len(TicksLayer *layer, int tick_idx) {
         return ticks_layer_is_polar(layer) ? 0 : 10;
     }
     switch(tick_idx % 4) {
-        case 0: return 10;
+        case 0: return 9;
         case 2: return 5;
         default: return 2;
     }
@@ -82,7 +82,6 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
 
     graphics_context_set_stroke_color(ctx, GColorWhite);
     graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_context_set_text_color(ctx, GColorWhite);
 
     // draw ticks
     {
@@ -92,6 +91,15 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
             int32_t angle = (int32_t) (TRIG_MAX_ANGLE * i / num_ticks);
             int32_t len = tick_len(ticks_layer, i);
             const int32_t r1 = r2 - len;
+
+            #if defined(PBL_COLOR)
+              if(len == 2) {
+                graphics_context_set_stroke_color(ctx, GColorDarkGray);
+              }
+              else {
+                graphics_context_set_stroke_color(ctx, GColorWhite);
+              }
+            #endif
 
             const GPoint inner = point_from_center(ticks_layer, angle, r1);
             const GPoint outer = point_from_center(ticks_layer, angle, r2);
@@ -115,6 +123,9 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
                 },
         };
         GPath *path = gpath_create(&points);
+        #if defined(PBL_COLOR)
+          graphics_context_set_fill_color(ctx, GColorRed);
+        #endif
         gpath_draw_filled(ctx, path);
         gpath_destroy(path);
     }
@@ -126,19 +137,15 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
             char* caption;
             int32_t angle;
             GFont font;
+            GColor color;
         } point_helper;
 
         GFont font_large = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
-//        GFont font_small = fonts_get_system_font(FONT_KEY_GOTHIC_14);
         point_helper point_helpers[] = {
-                {"N", TRIG_MAX_ANGLE * 0 / 8, font_large},
-//                {"NE",TRIG_MAX_ANGLE * 1 / 8, font_small},
-                {"E", TRIG_MAX_ANGLE * 2 / 8, font_large},
-//                {"SE",TRIG_MAX_ANGLE * 3 / 8, font_small},
-                {"S", TRIG_MAX_ANGLE * 4 / 8, font_large},
-//                {"SW",TRIG_MAX_ANGLE * 5 / 8, font_small},
-                {"W", TRIG_MAX_ANGLE * 6 / 8, font_large},
-//                {"NW",TRIG_MAX_ANGLE * 7 / 8, font_small},
+                {"N", TRIG_MAX_ANGLE * 0 / 8, font_large, PBL_IF_COLOR_ELSE(GColorRed, GColorWhite)},
+                {"E", TRIG_MAX_ANGLE * 2 / 8, font_large, GColorWhite},
+                {"S", TRIG_MAX_ANGLE * 4 / 8, font_large, GColorWhite},
+                {"W", TRIG_MAX_ANGLE * 6 / 8, font_large, GColorWhite},
         };
 
         {
@@ -147,6 +154,9 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
             const int16_t vertical_text_offset = 3;
 
             for (uint32_t i = 0; i < ARRAY_LENGTH(point_helpers); i++) {
+
+                graphics_context_set_text_color(ctx, point_helpers[i].color);
+
                 char const *caption = point_helpers[i].caption;
                 const GFont font = point_helpers[i].font;
 

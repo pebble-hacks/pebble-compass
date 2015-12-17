@@ -53,9 +53,6 @@ static void deinit(void) {
 
 int main(void) {
     init();
-
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Done initializing, pushed window: %p", compass_window);
-
     app_event_loop();
     deinit();
     return 0;

@@ -149,8 +149,8 @@ static float CubicEaseInOut(float p)
     }
 }
 
-static void data_provider_update_transition_factor(struct Animation *animation, const uint32_t time_normalized) {
-    DataProviderState *state = animation->context;
+static void data_provider_update_transition_factor(Animation *animation, AnimationProgress time_normalized) {
+    DataProviderState *state = animation_get_context(animation);
     float f = (float)time_normalized / ANIMATION_NORMALIZED_MAX;
     f = CubicEaseInOut(f); // manual easing, see PBL-6328
 
@@ -159,9 +159,15 @@ static void data_provider_update_transition_factor(struct Animation *animation, 
     data_provider_set_orientation_transition_factor((DataProvider *)state, target * f + (1-f) * state->orientation_animation_start_value);
 }
 
-static AnimationImplementation transition_animation = {
-        .update = data_provider_update_transition_factor,
+static AnimationImplementation transition_animation  = {
+  .update = data_provider_update_transition_factor
 };
+
+static void animation_stopped_handler(Animation *animation, bool finished, void *context) {
+  #ifdef PBL_SDK_2
+    animation_destroy(anim);
+  #endif
+}
 
 void data_provider_set_orientation(DataProvider *provider, DataProviderOrientation orientation) {
     DataProviderState *state = (DataProviderState *) provider;
@@ -171,14 +177,18 @@ void data_provider_set_orientation(DataProvider *provider, DataProviderOrientati
     call_handler_if_set(state, state->handlers.orientation_changed);
 
     // TODO: refactor to make this a property animation
-    if(!state->orientation_animation) {
-        state->orientation_animation = animation_create();
-        state->orientation_animation->duration_ms = 450;
-        state->orientation_animation->context = state;
-        state->orientation_animation->implementation = &transition_animation;
-    } else {
-        animation_unschedule(state->orientation_animation);
+    if(state->orientation_animation) {
+      animation_unschedule(state->orientation_animation);
+
     }
+
+    state->orientation_animation = animation_create();
+    animation_set_duration(state->orientation_animation, 450);
+    animation_set_implementation(state->orientation_animation, &transition_animation);
+    animation_set_handlers(state->orientation_animation, (AnimationHandlers) {
+      .started = NULL,
+      .stopped = NULL
+    }, state);
 
     state->orientation_animation_start_value = state->orientation_transition_factor;
     animation_schedule(state->orientation_animation);
@@ -191,7 +201,6 @@ DataProviderOrientation data_provider_get_orientation(DataProvider *provider) {
 
 // ---------------
 // accelerometer
-
 
 static void merge_accel_data(AccelData *dest, AccelData *next, float factor) {
     *dest = (AccelData){
@@ -209,7 +218,6 @@ static void data_provider_handle_accel_data(AccelData *data, uint32_t num_sample
     merge_accel_data(&state->last_accel_data, data, 0.99f);
     merge_accel_data(&state->damped_accel_data, data, 0.3f);
     call_handler_if_set(state, state->handlers.input_accel_data_changed);
-
 
     if(state->damped_accel_data.y < -700) {
         data_provider_set_orientation((DataProvider *)state, DataProviderOrientationUpright);
@@ -251,8 +259,6 @@ static void data_provider_handle_compass_data(CompassHeadingData heading) {
 }
 
 static void data_provider_handle_battery(BatteryChargeState charge) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "data_provider_handle_battery");
-
     DataProviderState *state = dataProviderStateSingleton;
     state->battery_charge_state = charge;
     call_handler_if_set(state, state->handlers.magnetic_interference_changed);
@@ -303,4 +309,3 @@ void data_provider_destroy(DataProvider *provider) {
         dataProviderStateSingleton = NULL;
     }
 }
-

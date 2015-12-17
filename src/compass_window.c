@@ -89,11 +89,11 @@ static void small_cross_hair_layer_update(Layer *layer, GContext *ctx) {
       GColor bg_pixel = get_bitmap_pixel_color(bg_image, bg_format, fg_frame.origin.y + y, fg_frame.origin.x + x);
       GColor fg_pixel = get_bitmap_pixel_color(data->small_cross_hair, data->small_cross_hair_format, y, x);
 
-      if(gcolor_equal(bg_pixel, GColorWhite)) {
+      if(gcolor_equal(bg_pixel, GColorWhite) && gcolor_equal(fg_pixel, GColorWhite)) {
         set_bitmap_pixel_color(bg_image, bg_format, fg_frame.origin.y + y, fg_frame.origin.x + x, PBL_IF_COLOR_ELSE(GColorRed, GColorBlack));
       }
-      else {
-        set_bitmap_pixel_color(bg_image, bg_format, fg_frame.origin.y + y, fg_frame.origin.x + x, fg_pixel);
+      else if(gcolor_equal(fg_pixel, GColorWhite)) {
+        set_bitmap_pixel_color(bg_image, bg_format, fg_frame.origin.y + y, fg_frame.origin.x + x, PBL_IF_COLOR_ELSE(GColorRed, GColorWhite));
       }
 
     }

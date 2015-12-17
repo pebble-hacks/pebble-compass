@@ -13,18 +13,18 @@
             {
               "file": "images/cross_hair_small.png",
               "name": "CROSS_HAIR_SMALL",
-              "type": "png"
+              "type": "bitmap"
             },
             {
                 "file": "images/icon.png",
                 "menuIcon": true,
                 "name": "ICON",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/cross_hair_large.png",
                 "name": "CROSS_HAIR_LARGE",
-                "type": "png"
+                "type": "bitmap"
             }
         ]
     },

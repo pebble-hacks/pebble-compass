@@ -169,7 +169,7 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
     const GPoint c = grect_center_point(&rect);
 
     graphics_context_set_stroke_color(ctx, GColorWhite);
-    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_context_set_fill_color(ctx, PBL_IF_COLOR_ELSE(GColorRed, GColorWhite));
 
     // as we don't have a graphics_fill_ring_segment() we fake a circle here
     // in reality we are painting and filling a regular polygon

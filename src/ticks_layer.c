@@ -190,6 +190,17 @@ void ticks_layer_set_angle(TicksLayer* layer, int32_t angle) {
 
 void ticks_layer_set_transition_factor(TicksLayer *layer, float factor) {
     ticks_layer_get_ticks_data(layer)->transition_factor = MIN(MAX(0, factor), 1);
+
+    GRect frame = layer_get_bounds(ticks_layer_get_layer(layer));
+    GRect newframe;
+    if(!ticks_layer_is_polar(layer)) {
+      newframe =  (GRect) { .origin = { frame.origin.x, PBL_IF_ROUND_ELSE(35, 8) }, .size = { frame.size.w, frame.size.h } };
+    }
+    else {
+      newframe =  (GRect) { .origin = { frame.origin.x, 8 }, .size = { frame.size.w, frame.size.h } };
+    }
+    layer_set_frame(ticks_layer_get_layer(layer), newframe);
+
     layer_mark_dirty(ticks_layer_get_layer(layer));
 }
 

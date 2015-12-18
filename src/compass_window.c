@@ -222,7 +222,7 @@ static void compass_window_load(Window *window) {
     layer_add_child(window_layer, ticks_layer_get_layer(data->ticks_layer));
 
     data->pointer_layer_rect_rose = (GRect){{(bounds.size.w-2)/2, 0}, {3, 20}};
-    data->pointer_layer_rect_band = (GRect){{(bounds.size.w-2)/2, 18}, {3, 40}};
+    data->pointer_layer_rect_band = (GRect){{(bounds.size.w-2)/2, PBL_IF_ROUND_ELSE(45, 18)}, {3, 40}};
     data->pointer_layer = layer_create(data->pointer_layer_rect_rose);
     layer_set_update_proc(data->pointer_layer, pointer_layer_update);
     layer_add_child(window_layer, (data->pointer_layer));

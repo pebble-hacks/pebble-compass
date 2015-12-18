@@ -194,7 +194,7 @@ void ticks_layer_set_transition_factor(TicksLayer *layer, float factor) {
     GRect frame = layer_get_bounds(ticks_layer_get_layer(layer));
     GRect newframe;
     if(!ticks_layer_is_polar(layer)) {
-      newframe =  (GRect) { .origin = { frame.origin.x, PBL_IF_ROUND_ELSE(35, 8) }, .size = { frame.size.w, frame.size.h } };
+      newframe =  (GRect) { .origin = { frame.origin.x, PBL_IF_ROUND_ELSE(37, 8) }, .size = { frame.size.w, frame.size.h } };
     }
     else {
       newframe =  (GRect) { .origin = { frame.origin.x, 8 }, .size = { frame.size.w, frame.size.h } };

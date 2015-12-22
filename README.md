@@ -1,6 +1,6 @@
 # Pebble Compass
 
-![Pebble appstore banner](media/compass.png)
+![Pebble appstore banner](media/compass-chalk.png)
 
 Shows a white compass rose on black background, a level indicator and two text layers showing the current heading angle in degrees and as short direction text, e.g. "N" or "NE".
 It smoothly transitions to a second representation as band if you hold your watch upright.

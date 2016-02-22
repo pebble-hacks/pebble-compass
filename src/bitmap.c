@@ -2,6 +2,11 @@
 #include "bitmap.h"
 
 void set_bitmap_pixel_color(GBitmap *bitmap, GBitmapFormat bitmap_format, int y, int x, GColor color) {
+  GRect bounds = gbitmap_get_bounds(bitmap);
+  if (y >= bounds.size.h) {
+    //APP_LOG(APP_LOG_LEVEL_WARNING, "Setting offscreen pixel at (%u, %u) to %x", x, y, color.argb);
+    return;
+  }
   GBitmapDataRowInfo row = gbitmap_get_data_row_info(bitmap, y);
   if ((x >= row.min_x) && (x <= row.max_x)) {
     switch(bitmap_format) {

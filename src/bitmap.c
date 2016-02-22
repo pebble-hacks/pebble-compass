@@ -3,7 +3,7 @@
 
 void set_bitmap_pixel_color(GBitmap *bitmap, GBitmapFormat bitmap_format, int y, int x, GColor color) {
   GRect bounds = gbitmap_get_bounds(bitmap);
-  if (y >= bounds.size.h) {
+  if (y < 0 || y >= bounds.size.h) {
     //APP_LOG(APP_LOG_LEVEL_WARNING, "Setting offscreen pixel at (%u, %u) to %x", x, y, color.argb);
     return;
   }

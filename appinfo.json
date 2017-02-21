@@ -1,29 +1,43 @@
 {
-  "uuid": "49827722-4f3b-4e3f-9e96-d660089f50c1",
-  "shortName": "Compass",
-  "longName": "Compass",
-  "companyName": "MakeAwesomeHappen",
-  "versionCode": 4,
-  "versionLabel": "1.0",
-  "watchapp": {
-    "watchface": false
-  },
-  "appKeys": {
-    "dummy": 0
-  },
-  "resources": {
-    "media": [
-        {
-            "type": "png",
-            "name": "ICON",
-            "file": "icon.png",
-            "menuIcon": true
-        },
-        {
-            "type": "png",
-            "name": "CROSS_HAIR_LARGE",
-            "file": "cross_hair_large.png"
-        }
-    ]
-  }
+    "appKeys": {
+        "dummy": 0
+    },
+    "capabilities": [
+        ""
+    ],
+    "companyName": "MakeAwesomeHappen",
+    "longName": "Compass",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+              "file": "images/cross_hair_small.png",
+              "name": "CROSS_HAIR_SMALL",
+              "type": "bitmap"
+            },
+            {
+                "file": "images/icon.png",
+                "menuIcon": true,
+                "name": "ICON",
+                "type": "bitmap"
+            },
+            {
+                "file": "images/cross_hair_large.png",
+                "name": "CROSS_HAIR_LARGE",
+                "type": "bitmap"
+            }
+        ]
+    },
+    "sdkVersion": "3",
+    "shortName": "Compass",
+    "targetPlatforms": [
+        "aplite",
+        "basalt",
+        "chalk"
+    ],
+    "uuid": "49827722-4f3b-4e3f-9e96-d660089f50c1",
+    "versionLabel": "1.22",
+    "watchapp": {
+        "watchface": false
+    }
 }

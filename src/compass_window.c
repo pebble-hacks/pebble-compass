@@ -180,6 +180,10 @@ static void pointer_layer_update(Layer *layer, GContext *ctx) {
   //graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 }
 
+#if PBL_DISPLAY_WIDTH > 180 //we are on emery or gabbro, or something larger
+    #define HIGH_DPI
+#endif
+
 static void compass_window_load(Window *window) {
     // TODO: get rid of absolute coordinates
     // one day... I hope... we will have an interface builder... and transitioning by the firmware...
@@ -187,9 +191,17 @@ static void compass_window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
 
-    const int16_t text_height_rose = 24;
-    const int16_t text_height_band = 55;
-    const GFont text_font = fonts_get_system_font(PBL_IF_ROUND_ELSE(FONT_KEY_GOTHIC_18_BOLD, FONT_KEY_GOTHIC_24_BOLD));
+    #ifdef HIGH_DPI
+        const int16_t text_height_rose = 28;
+        const int16_t text_height_band = 55;
+    
+        const GFont text_font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+    #else
+        const int16_t text_height_rose = 24;
+        const int16_t text_height_band = 55;
+    
+        const GFont text_font = fonts_get_system_font(PBL_IF_ROUND_ELSE(FONT_KEY_GOTHIC_18_BOLD, FONT_KEY_GOTHIC_24_BOLD));
+    #endif
 
     const int16_t rose_text_offset_top = PBL_IF_ROUND_ELSE(bounds.size.h/2, bounds.size.h) - PBL_IF_ROUND_ELSE((text_height_rose/2), text_height_rose);
 

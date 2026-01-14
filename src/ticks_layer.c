@@ -3,6 +3,10 @@
 #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
+#if PBL_DISPLAY_WIDTH > 180 //we are on emery or gabbro, or something larger
+    #define HIGH_DPI
+#endif
+
 typedef struct {
     int32_t angle;
     float transition_factor;
@@ -140,7 +144,11 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
             GColor color;
         } point_helper;
 
-        GFont font_large = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+        #ifdef HIGH_DPI
+            GFont font_large = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+        #else
+            GFont font_large = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+        #endif
         point_helper point_helpers[] = {
                 {"N", TRIG_MAX_ANGLE * 0 / 8, font_large, PBL_IF_COLOR_ELSE(GColorRed, GColorWhite)},
                 {"E", TRIG_MAX_ANGLE * 2 / 8, font_large, GColorWhite},
@@ -149,9 +157,14 @@ static void ticks_layer_update_proc(Layer *layer, GContext *ctx) {
         };
 
         {
-            int32_t margin_letter = 19;
+            #ifdef HIGH_DPI
+                int32_t margin_letter = 26;
+                const int16_t vertical_text_offset = 3;
+            #else
+                int32_t margin_letter = 19;
+                const int16_t vertical_text_offset = 3;
+            #endif
             const int32_t r0 = r2 - margin_letter;
-            const int16_t vertical_text_offset = 3;
 
             for (uint32_t i = 0; i < ARRAY_LENGTH(point_helpers); i++) {
 

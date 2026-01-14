@@ -2,6 +2,10 @@
 
 #define CALIBRATION_NUM_SEGMENTS 80
 
+#if PBL_DISPLAY_WIDTH > 180 //we are on emery or gabbro, or something larger
+    #define HIGH_DPI
+#endif
+
 typedef struct {
     // actual ring, custom update_proc
     Layer *indicator_layer;
@@ -161,7 +165,11 @@ static void draw_indicator(Layer *layer, GContext* ctx) {
     CompassCalibrationWindowData *data = *(CompassCalibrationWindowDataPtr*)layer_get_data(layer);
 
     const GRect rect = layer_get_bounds(layer);
-    const uint16_t ring_thickness = 10;
+    #ifdef HIGH_DPI
+        const uint16_t ring_thickness = 15;    
+    #else
+        const uint16_t ring_thickness = 10;
+    #endif
     const uint16_t outer_radius = (uint16_t) (MIN(rect.size.h, rect.size.w) / 2);
     const uint16_t inner_radius = outer_radius - ring_thickness;
     const uint16_t mid_radius = (uint16_t const) ((outer_radius + inner_radius) / 2);
@@ -252,11 +260,21 @@ static TextLayer * create_and_add_text_layer(Layer *window_layer, GRect *all_tex
     return layer;
 }
 
+#ifdef HIGH_DPI
+    char *headline_font = FONT_KEY_GOTHIC_24_BOLD;
+    char *description_font = FONT_KEY_GOTHIC_24;
+#else
+    char *headline_font = FONT_KEY_GOTHIC_18_BOLD;
+    char *description_font = FONT_KEY_GOTHIC_18;
+#endif
+
+
+
 static void window_load(Window *window) {
     CompassCalibrationWindowData *data = window_get_user_data(window);
     struct Layer *window_layer = window_get_root_layer(window);
 
-    GRect frame = layer_get_bounds(window_layer);
+    GRect frame = layer_get_unobstructed_bounds(window_layer);
     frame = grect_crop(frame, CALIBRATION_WINDOW_RING_MARGIN);
     data->indicator_layer = layer_create_with_data(frame, sizeof(CompassCalibrationWindowDataPtr));
     data->current_angle = 20 * TRIG_MAX_ANGLE / 360;
@@ -269,10 +287,10 @@ static void window_load(Window *window) {
     // TODO: get rid of absolute coordinates
     // note, as there's not way to detect bounds changes of a layer, one has to do this during update
     // or here, assuming the size of a window won't change
-    GRect all_text_rect = (GRect){.size = GSize(100, 60)};
+    GRect all_text_rect = (GRect){.size = GSize(frame.size.w, (frame.size.h / 3) + 2)};
     grect_align(&all_text_rect, &frame, GAlignCenter, true);
-    data->headline_layer = create_and_add_text_layer(window_layer, &all_text_rect, GAlignTop, FONT_KEY_GOTHIC_18_BOLD, INITIAL_HEADLINE);
-    data->description_layer = create_and_add_text_layer(window_layer, &all_text_rect, GAlignBottom, FONT_KEY_GOTHIC_18, INITIAL_DESCRIPTION);
+    data->headline_layer = create_and_add_text_layer(window_layer, &all_text_rect, GAlignTop, headline_font, INITIAL_HEADLINE);
+    data->description_layer = create_and_add_text_layer(window_layer, &all_text_rect, GAlignBottom, description_font, INITIAL_DESCRIPTION);
     update_description_if_needed(data);
 }
 
